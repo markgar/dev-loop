@@ -2,3 +2,8 @@
 .dev-loop/
 .SDD/
 run.ps1
+
+# Ignore everything in bookstore-api-sample except specs and .gitignore
+bookstore-api-sample/*
+!bookstore-api-sample/specs/
+!bookstore-api-sample/.gitignore
