@@ -32,13 +32,13 @@ git clone https://github.com/markgar/dev-loop.git
 ### As a module (installed from Gallery)
 
 ```powershell
-Invoke-DevLoop -SpecsDir <path> -ProjectDir <path> [-GitPush] [-Model <model>]
+Invoke-DevLoop -SpecsDir '<path>' -ProjectDir '<path>' [-GitPush] [-Model <model>]
 ```
 
 ### As a script (cloned from repo)
 
 ```powershell
-.\dev-loop.ps1 -SpecsDir <path> -ProjectDir <path> [-GitPush] [-Model <model>]
+.\dev-loop.ps1 -SpecsDir '<path>' -ProjectDir '<path>' [-GitPush] [-Model <model>]
 ```
 
 ### Choosing a Model
@@ -65,7 +65,7 @@ cd ~/my-bookstore
 git init
 
 # Point dev-loop at the sample specs
-<path-to-dev-loop>/dev-loop.ps1 -SpecsDir <path-to-dev-loop>/sample-spec -ProjectDir .
+'<path-to-dev-loop>/dev-loop.ps1' -SpecsDir '<path-to-dev-loop>/sample-spec' -ProjectDir .
 ```
 
 The dev-loop will plan, build, review, and test each spec in order — generating the entire project from scratch in your target directory.
@@ -73,7 +73,7 @@ The dev-loop will plan, build, review, and test each spec in order — generatin
 ## How It Works
 
 ```
-Invoke-DevLoop -SpecsDir <path> -ProjectDir <path> [-GitPush]
+Invoke-DevLoop -SpecsDir '<path>' -ProjectDir '<path>' [-GitPush]
     │
     ├── preflight.ps1  — Discover specs, constitution review
     │
