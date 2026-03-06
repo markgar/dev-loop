@@ -1,0 +1,33 @@
+name: Publish to PowerShell Gallery
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate module manifest
+        shell: pwsh
+        run: Test-ModuleManifest -Path ./src/dev-loop/dev-loop.psd1
+
+      - name: Verify tag matches manifest version
+        shell: pwsh
+        run: |
+          $manifest = Import-PowerShellDataFile ./src/dev-loop/dev-loop.psd1
+          $tagVersion = "${{ github.ref_name }}".TrimStart('v')
+          if ($manifest.ModuleVersion -ne $tagVersion) {
+            throw "Tag version ($tagVersion) does not match manifest version ($($manifest.ModuleVersion))"
+          }
+          Write-Host "Version confirmed: $tagVersion"
+
+      - name: Publish module
+        shell: pwsh
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          Publish-Module -Path ./src/dev-loop -NuGetApiKey $env:NUGET_API_KEY -Verbose
