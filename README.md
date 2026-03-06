@@ -5,7 +5,7 @@ Automated development loop powered by [GitHub Copilot CLI](https://docs.github.c
 ## How It Works
 
 ```
-.\dev-loop.ps1 -SpecsDir <path> -ProjectDir <path>
+.\dev-loop.ps1 -SpecsDir <path> -ProjectDir <path> [-GitPush]
     │
     ├── preflight.ps1  — Discover specs, constitution review
     │
@@ -37,26 +37,31 @@ Each run creates a timestamped directory under `.dev-loop/` in the target projec
 
 Phase timestamps in `manifest.json` enable checkpoint/resume — completed phases are skipped on re-run.
 
-## Try It with the Sample Spec
+## Try It with the Sample Specs
 
-The repo includes a sample bookstore API example in [spec-kit](https://github.com/github/spec-kit) style — a `CONSTITUTION.md` and two numbered specs:
-
-```
-bookstore-api-sample/
-└── specs/
-    ├── CONSTITUTION.md
-    ├── 01-bookstore-rest-api.md
-    └── 02-book-search-filtering.md
-```
-
-To run the dev-loop against it:
+The repo includes sample specs in [spec-kit](https://github.com/github/spec-kit) style — a `CONSTITUTION.md` and two numbered specs that describe a bookstore REST API. To try it out, create a fresh project directory somewhere outside this repo and point `dev-loop` at it:
 
 ```powershell
-pwsh dev-loop.ps1 -SpecsDir ./bookstore-api-sample/specs -ProjectDir ./bookstore-api-sample
+# 1. Create a new project directory wherever you like
+mkdir ~/my-bookstore
+cd ~/my-bookstore
+git init  # required — dev-loop expects a git repo
+
+# 2. Run the dev-loop, pointing -SpecsDir at the sample specs in this repo
+#    and -ProjectDir at your new project
+<path-to-dev-loop>/dev-loop.ps1 -SpecsDir <path-to-dev-loop>/specs -ProjectDir .
 ```
+
+The specs describe:
+- `CONSTITUTION.md` — Product constraints (tech stack, conventions, principles)
+- `01-bookstore-rest-api.md` — Core CRUD endpoints for a bookstore API
+- `02-book-search-filtering.md` — Search and filtering capabilities
+
+The dev-loop will plan, build, review, and test each spec in order — generating the entire project from scratch in your target directory.
 
 ## Requirements
 
 - [GitHub Copilot CLI](https://docs.github.com/en/copilot) (`copilot` on `$env:PATH`)
 - PowerShell 7+
 - Git
+- The target project directory must be a git repository (`git init`). The dev-loop will exit with an error if it isn't.

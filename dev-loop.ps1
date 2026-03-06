@@ -1,12 +1,14 @@
 # dev-loop.ps1 — Manifest-driven Plan → Build → Review → Test loop
-# Usage: .\dev-loop.ps1 -SpecsDir <path> -ProjectDir <path>
+# Usage: .\dev-loop.ps1 -SpecsDir <path> -ProjectDir <path> [-GitPush]
 
 param(
     [Parameter(Mandatory)]
     [string]$SpecsDir,
 
     [Parameter(Mandatory)]
-    [string]$ProjectDir
+    [string]$ProjectDir,
+
+    [switch]$GitPush
 )
 
 Set-StrictMode -Version Latest
@@ -16,6 +18,21 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 
 $SpecsDir = (Resolve-Path $SpecsDir).Path
 $ProjectDir = (Resolve-Path $ProjectDir).Path
+
+# ── Validate ProjectDir is a git repository ───────────────────────
+if (-not (Test-Path (Join-Path $ProjectDir '.git'))) {
+    Write-Host "ERROR: ProjectDir '$ProjectDir' is not a git repository. Please run 'git init' first." -ForegroundColor Red
+    exit 1
+}
+
+# ── Validate git remote exists when -Push is requested ────────────
+if ($GitPush) {
+    $remotes = git -C $ProjectDir remote 2>$null
+    if (-not $remotes) {
+        Write-Host "ERROR: -GitPush was specified but no git remote is configured in '$ProjectDir'. Add a remote first (e.g., git remote add origin <url>)." -ForegroundColor Red
+        exit 1
+    }
+}
 
 Push-Location $PSScriptRoot
 
@@ -173,21 +190,21 @@ try {
                         }
                         $buildIteration++
                         Log "  [build] iteration $buildIteration — unchecked tasks remain" Yellow
-                        & "$PSScriptRoot\agents\build.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile
+                        & "$PSScriptRoot\agents\build.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile -GitPush:$GitPush
                         if ($LASTEXITCODE -ne 0) { Log "BUILD FAILED for $specName (iteration $buildIteration)" Red; exit 1 }
                     }
                     Stamp-Phase $specName 'build'
                 }
                 'review' {
                     Start-Phase $specName 'review'
-                    & "$PSScriptRoot\agents\review.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile
+                    & "$PSScriptRoot\agents\review.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile -GitPush:$GitPush
                     if ($LASTEXITCODE -ne 0) { Log "REVIEW FAILED for $specName" Red; exit 1 }
                     Stamp-Phase $specName 'review'
                 }
                 'test' {
                     # DISABLED — uncomment to re-enable test phase
                     # Start-Phase $specName 'test'
-                    # & "$PSScriptRoot\agents\test.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile
+                    # & "$PSScriptRoot\agents\test.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile -GitPush:$GitPush
                     # if ($LASTEXITCODE -ne 0) { Log "TEST FAILED for $specName" Red; exit 1 }
                     # Stamp-Phase $specName 'test'
                     Log "  [test] SKIPPED (disabled)" DarkGray
