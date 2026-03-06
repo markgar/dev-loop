@@ -5,7 +5,7 @@ Automated development loop powered by [GitHub Copilot CLI](https://docs.github.c
 ## How It Works
 
 ```
-.\dev-loop.ps1 -SpecsDir <path>
+.\dev-loop.ps1 -SpecsDir <path> -ProjectDir <path>
     │
     ├── preflight.ps1  — Discover specs, constitution review
     │
@@ -36,6 +36,24 @@ Each run creates a timestamped directory under `.dev-loop/` in the target projec
 ```
 
 Phase timestamps in `manifest.json` enable checkpoint/resume — completed phases are skipped on re-run.
+
+## Try It with the Sample Spec
+
+The repo includes a sample bookstore API example in [spec-kit](https://github.com/github/spec-kit) style — a `CONSTITUTION.md` and two numbered specs:
+
+```
+bookstore-api-sample/
+└── specs/
+    ├── CONSTITUTION.md
+    ├── 01-bookstore-rest-api.md
+    └── 02-book-search-filtering.md
+```
+
+To run the dev-loop against it:
+
+```powershell
+pwsh dev-loop.ps1 -SpecsDir ./bookstore-api-sample/specs -ProjectDir ./bookstore-api-sample
+```
 
 ## Requirements
 

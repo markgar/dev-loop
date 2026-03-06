@@ -1,10 +1,13 @@
 # preflight.ps1 — Discover specs, constitution check
-# Usage: .\preflight.ps1 -SpecsDir <path> -RunDir <path>
+# Usage: .\preflight.ps1 -SpecsDir <path> -ProjectDir <path> -RunDir <path>
 # Outputs: spec-discovery.json (spec list) in RunDir
 
 param(
     [Parameter(Mandatory)]
     [string]$SpecsDir,
+
+    [Parameter(Mandatory)]
+    [string]$ProjectDir,
 
     [Parameter(Mandatory)]
     [string]$RunDir,
@@ -18,10 +21,8 @@ $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
 
-# Work from the target project's git root so copilot sees the real project
-$_projectRoot = (git -C $SpecsDir rev-parse --show-toplevel 2>$null)
-if (-not $_projectRoot) { Write-Host "Could not find git root for $SpecsDir" -ForegroundColor Red; exit 1 }
-Push-Location $_projectRoot
+# Work from the target project directory
+Push-Location $ProjectDir
 
 try {
     # ── Logging ───────────────────────────────────────────────────────
@@ -42,6 +43,7 @@ try {
 
     if ($specFiles.Count -eq 0) {
         Log "No numbered spec files (NN-*.md) found in $SpecsDir — nothing to do." Yellow
+        Log "Are you using spec-kit style specs? See https://github.com/github/spec-kit" Yellow
         exit 1
     }
 
@@ -66,6 +68,7 @@ try {
     $constitutionPath = Join-Path $SpecsDir 'CONSTITUTION.md'
     if (-not (Test-Path $constitutionPath)) {
         Log "No CONSTITUTION.md found at $constitutionPath — skipping constitution check." Yellow
+        Log "Are you using spec-kit style specs? See https://github.com/github/spec-kit" Yellow
         Log "Pre-flight complete (no constitution)." Green
         exit 0
     }

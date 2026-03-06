@@ -1,26 +1,28 @@
 # dev-loop.ps1 — Manifest-driven Plan → Build → Review → Test loop
-# Usage: .\dev-loop.ps1 -SpecsDir <path>
+# Usage: .\dev-loop.ps1 -SpecsDir <path> -ProjectDir <path>
 
 param(
     [Parameter(Mandatory)]
-    [string]$SpecsDir
+    [string]$SpecsDir,
+
+    [Parameter(Mandatory)]
+    [string]$ProjectDir
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
+
+$SpecsDir = (Resolve-Path $SpecsDir).Path
+$ProjectDir = (Resolve-Path $ProjectDir).Path
+
 Push-Location $PSScriptRoot
 
 try {
-    $SpecsDir = (Resolve-Path $SpecsDir).Path
-
-    # ── Project root detection ────────────────────────────────────────
-    $_projectRoot = (git -C $SpecsDir rev-parse --show-toplevel 2>$null)
-    if (-not $_projectRoot) { Write-Host "Could not find git root for $SpecsDir" -ForegroundColor Red; exit 1 }  # Log not available yet
 
     # ── Tracking directory setup ──────────────────────────────────────
-    $trackingRoot = Join-Path $_projectRoot '.dev-loop'
+    $trackingRoot = Join-Path $ProjectDir '.dev-loop'
     if (-not (Test-Path $trackingRoot)) {
         New-Item -ItemType Directory -Path $trackingRoot | Out-Null
         Write-Host "Created tracking directory: $trackingRoot" -ForegroundColor DarkGray  # Log not available yet
@@ -34,14 +36,14 @@ try {
 
     # ── Branch setup (isolate work in the target project) ─────────────
     $branchName = 'dev-loop'
-    $currentBranch = (git -C $_projectRoot branch --show-current 2>$null)
+    $currentBranch = (git -C $ProjectDir branch --show-current 2>$null)
     if ($currentBranch -ne $branchName) {
         # Create or switch to the dev-loop branch
-        $branchExists = git -C $_projectRoot branch --list $branchName 2>$null
+        $branchExists = git -C $ProjectDir branch --list $branchName 2>$null
         if ($branchExists) {
-            git -C $_projectRoot checkout $branchName
+            git -C $ProjectDir checkout $branchName
         } else {
-            git -C $_projectRoot checkout -b $branchName
+            git -C $ProjectDir checkout -b $branchName
         }
         Write-Host "On branch: $branchName" -ForegroundColor Green  # Log not available yet
     } else {
@@ -86,7 +88,7 @@ try {
     # ── Pre-flight (discovers specs, constitution check) ────────────
     $preflightLog = Join-Path $runDir 'preflight.log'
     Log "Preflight log: $preflightLog" DarkGray
-    & "$PSScriptRoot\agents\preflight.ps1" -SpecsDir $SpecsDir -RunDir $runDir -LogFile $preflightLog
+    & "$PSScriptRoot\agents\preflight.ps1" -SpecsDir $SpecsDir -ProjectDir $ProjectDir -RunDir $runDir -LogFile $preflightLog
     if ($LASTEXITCODE -ne 0) { exit 1 }
 
     # ── Build manifest from preflight discovery ───────────────────────
@@ -148,13 +150,13 @@ try {
             switch ($phase) {
                 'plan' {
                     Start-Phase $specName 'plan'
-                    & "$PSScriptRoot\agents\plan.ps1" -SpecFile $specFile -RunDir $runDir -LogFile $specLogFile
+                    & "$PSScriptRoot\agents\plan.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile
                     if ($LASTEXITCODE -ne 0) { Log "PLAN FAILED for $specName" Red; exit 1 }
                     Stamp-Phase $specName 'plan'
                 }
                 'plan-eval' {
                     Start-Phase $specName 'plan-eval'
-                    & "$PSScriptRoot\agents\plan-eval.ps1" -SpecFile $specFile -RunDir $runDir -LogFile $specLogFile
+                    & "$PSScriptRoot\agents\plan-eval.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile
                     if ($LASTEXITCODE -ne 0) { Log "PLAN-EVAL FAILED for $specName" Red; exit 1 }
                     Stamp-Phase $specName 'plan-eval'
                 }
@@ -171,21 +173,21 @@ try {
                         }
                         $buildIteration++
                         Log "  [build] iteration $buildIteration — unchecked tasks remain" Yellow
-                        & "$PSScriptRoot\agents\build.ps1" -SpecFile $specFile -RunDir $runDir -LogFile $specLogFile
+                        & "$PSScriptRoot\agents\build.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile
                         if ($LASTEXITCODE -ne 0) { Log "BUILD FAILED for $specName (iteration $buildIteration)" Red; exit 1 }
                     }
                     Stamp-Phase $specName 'build'
                 }
                 'review' {
                     Start-Phase $specName 'review'
-                    & "$PSScriptRoot\agents\review.ps1" -SpecFile $specFile -RunDir $runDir -LogFile $specLogFile
+                    & "$PSScriptRoot\agents\review.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile
                     if ($LASTEXITCODE -ne 0) { Log "REVIEW FAILED for $specName" Red; exit 1 }
                     Stamp-Phase $specName 'review'
                 }
                 'test' {
                     # DISABLED — uncomment to re-enable test phase
                     # Start-Phase $specName 'test'
-                    # & "$PSScriptRoot\agents\test.ps1" -SpecFile $specFile -RunDir $runDir -LogFile $specLogFile
+                    # & "$PSScriptRoot\agents\test.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile
                     # if ($LASTEXITCODE -ne 0) { Log "TEST FAILED for $specName" Red; exit 1 }
                     # Stamp-Phase $specName 'test'
                     Log "  [test] SKIPPED (disabled)" DarkGray

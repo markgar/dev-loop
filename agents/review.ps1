@@ -1,9 +1,12 @@
 # review.ps1 — Senior SWE code review, fix, and capture learnings
-# Usage: .\review.ps1 -SpecFile <path> -RunDir <path>
+# Usage: .\review.ps1 -SpecFile <path> -ProjectDir <path> -RunDir <path>
 
 param(
     [Parameter(Mandatory)]
     [string]$SpecFile,
+
+    [Parameter(Mandatory)]
+    [string]$ProjectDir,
 
     [Parameter(Mandatory)]
     [string]$RunDir,
@@ -17,10 +20,8 @@ $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
 
-# Work from the target project's git root so copilot sees the real project
-$_projectRoot = (git -C (Split-Path $SpecFile -Parent) rev-parse --show-toplevel 2>$null)
-if (-not $_projectRoot) { Write-Host "Could not find git root for $SpecFile" -ForegroundColor Red; exit 1 }
-Push-Location $_projectRoot
+# Work from the target project directory
+Push-Location $ProjectDir
 
 try {
     $SpecsDir = Split-Path $SpecFile -Parent
