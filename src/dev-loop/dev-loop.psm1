@@ -64,6 +64,21 @@ function Invoke-DevLoop {
             Write-Host "Created tracking directory: $trackingRoot" -ForegroundColor DarkGray
         }
 
+        # ── Ensure .dev-loop/ is in .gitignore before any commits ─────────
+        $gitignorePath = Join-Path $ProjectDir '.gitignore'
+        $devLoopPattern = '.dev-loop/'
+        $needsEntry = $true
+        if (Test-Path $gitignorePath) {
+            $lines = Get-Content $gitignorePath
+            if ($lines -contains $devLoopPattern) {
+                $needsEntry = $false
+            }
+        }
+        if ($needsEntry) {
+            Add-Content -Path $gitignorePath -Value "`n$devLoopPattern"
+            Write-Host "Added .dev-loop/ to .gitignore" -ForegroundColor DarkGray
+        }
+
         # Derive a timestamp for this run and create the run directory
         $RunTimestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
         $runDir = Join-Path $trackingRoot $RunTimestamp
