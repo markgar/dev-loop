@@ -4,7 +4,7 @@
 [![PowerShell Gallery Downloads](https://img.shields.io/powershellgallery/dt/dev-loop)](https://www.powershellgallery.com/packages/dev-loop)
 [![License](https://img.shields.io/github/license/markgar/dev-loop)](LICENSE)
 
-Automated development loop powered by [GitHub Copilot CLI](https://docs.github.com/en/copilot). Each phase shells out to `copilot -p "..." --yolo` with a crafted prompt. Specs are numbered Markdown files (`NN-slug.md`) processed one at a time — plan, build, review, and test — all phases to completion before moving to the next.
+Automated development loop powered by [GitHub Copilot CLI](https://docs.github.com/en/copilot). Each phase shells out to `copilot -p "..." --yolo` with a crafted prompt. Specs follow the [spec-kit](https://github.com/github/spec-kit) convention — numbered Markdown files (`NN-slug.md`) with a `CONSTITUTION.md` defining product constraints. Each spec is processed one at a time — plan, build, review — all phases to completion before moving to the next.
 
 ## Requirements
 
