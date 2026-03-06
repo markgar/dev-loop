@@ -32,14 +32,24 @@ git clone https://github.com/markgar/dev-loop.git
 ### As a module (installed from Gallery)
 
 ```powershell
-Invoke-DevLoop -SpecsDir <path> -ProjectDir <path> [-GitPush]
+Invoke-DevLoop -SpecsDir <path> -ProjectDir <path> [-GitPush] [-Model <model>]
 ```
 
 ### As a script (cloned from repo)
 
 ```powershell
-.\dev-loop.ps1 -SpecsDir <path> -ProjectDir <path> [-GitPush]
+.\dev-loop.ps1 -SpecsDir <path> -ProjectDir <path> [-GitPush] [-Model <model>]
 ```
+
+### Choosing a Model
+
+By default, Copilot CLI picks its own model. Use `-Model` to override:
+
+```powershell
+Invoke-DevLoop -SpecsDir ./specs -ProjectDir . -Model claude-sonnet-4
+```
+
+Run `copilot --help` to see available models.
 
 ### Quick Start with Sample Specs
 

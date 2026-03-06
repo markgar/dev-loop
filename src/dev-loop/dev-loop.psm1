@@ -18,8 +18,13 @@ function Invoke-DevLoop {
         If specified, git push is performed after each build and review phase.
     .EXAMPLE
         Invoke-DevLoop -SpecsDir ./specs -ProjectDir ~/my-project
+    .PARAMETER Model
+        AI model to use (e.g. claude-sonnet-4, gpt-5.1). If omitted, Copilot CLI uses its default.
+        Run 'copilot --help' to see available models.
     .EXAMPLE
         Invoke-DevLoop -SpecsDir ./specs -ProjectDir ~/my-project -GitPush
+    .EXAMPLE
+        Invoke-DevLoop -SpecsDir ./specs -ProjectDir ~/my-project -Model claude-sonnet-4
     #>
     [CmdletBinding()]
     param(
@@ -29,7 +34,9 @@ function Invoke-DevLoop {
         [Parameter(Mandatory)]
         [string]$ProjectDir,
 
-        [switch]$GitPush
+        [switch]$GitPush,
+
+        [string]$Model
     )
 
     Set-StrictMode -Version Latest
@@ -123,7 +130,10 @@ function Invoke-DevLoop {
         # ── Pre-flight (discovers specs, constitution check) ────────────
         $preflightLog = Join-Path $runDir 'preflight.log'
         Log "Preflight log: $preflightLog" DarkGray
-        & "$script:ModuleRoot\agents\preflight.ps1" -SpecsDir $SpecsDir -ProjectDir $ProjectDir -RunDir $runDir -LogFile $preflightLog
+        $modelArgs = @{}
+        if ($Model) { $modelArgs['Model'] = $Model }
+
+        & "$script:ModuleRoot\agents\preflight.ps1" -SpecsDir $SpecsDir -ProjectDir $ProjectDir -RunDir $runDir -LogFile $preflightLog @modelArgs
         if ($LASTEXITCODE -ne 0) { throw "Preflight failed." }
 
         # ── Build manifest from preflight discovery ───────────────────────
@@ -184,13 +194,13 @@ function Invoke-DevLoop {
                 switch ($phase) {
                     'plan' {
                         Start-Phase $specName 'plan'
-                        & "$script:ModuleRoot\agents\plan.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile
+                        & "$script:ModuleRoot\agents\plan.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile @modelArgs
                         if ($LASTEXITCODE -ne 0) { throw "PLAN FAILED for $specName" }
                         Stamp-Phase $specName 'plan'
                     }
                     'plan-eval' {
                         Start-Phase $specName 'plan-eval'
-                        & "$script:ModuleRoot\agents\plan-eval.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile
+                        & "$script:ModuleRoot\agents\plan-eval.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile @modelArgs
                         if ($LASTEXITCODE -ne 0) { throw "PLAN-EVAL FAILED for $specName" }
                         Stamp-Phase $specName 'plan-eval'
                     }
@@ -206,21 +216,21 @@ function Invoke-DevLoop {
                             }
                             $buildIteration++
                             Log "  [build] iteration $buildIteration — unchecked tasks remain" Yellow
-                            & "$script:ModuleRoot\agents\build.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile -GitPush:$GitPush
+                            & "$script:ModuleRoot\agents\build.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile -GitPush:$GitPush @modelArgs
                             if ($LASTEXITCODE -ne 0) { throw "BUILD FAILED for $specName (iteration $buildIteration)" }
                         }
                         Stamp-Phase $specName 'build'
                     }
                     'review' {
                         Start-Phase $specName 'review'
-                        & "$script:ModuleRoot\agents\review.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile -GitPush:$GitPush
+                        & "$script:ModuleRoot\agents\review.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile -GitPush:$GitPush @modelArgs
                         if ($LASTEXITCODE -ne 0) { throw "REVIEW FAILED for $specName" }
                         Stamp-Phase $specName 'review'
                     }
                     'test' {
                         # DISABLED — uncomment to re-enable test phase
                         # Start-Phase $specName 'test'
-                        # & "$script:ModuleRoot\agents\test.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile -GitPush:$GitPush
+                        # & "$script:ModuleRoot\agents\test.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile -GitPush:$GitPush @modelArgs
                         # if ($LASTEXITCODE -ne 0) { throw "TEST FAILED for $specName" }
                         # Stamp-Phase $specName 'test'
                         Log "  [test] SKIPPED (disabled)" DarkGray

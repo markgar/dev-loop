@@ -14,7 +14,9 @@ param(
     [Parameter(Mandatory)]
     [string]$LogFile,
 
-    [switch]$GitPush
+    [switch]$GitPush,
+
+    [string]$Model
 )
 
 Set-StrictMode -Version Latest
@@ -58,7 +60,7 @@ SCOPE CONSTRAINT: You must only consider these sources of information when build
 Do NOT read, reference, or implement work from any other spec files. Other specs are out of scope for this build session.
 
 Read the plan file above. It contains a checklist of tasks using ``- [ ]`` checkboxes. Find the first two unchecked tasks (``- [ ]``) and build them both, in order. If only one unchecked task remains, build just that one. Reference $devLoopRoot\ENGINEERING_STANDARDS.md (if it exists) for guidance. Aim for: fail-fast validation, no magic strings, immutability by default, inward-pointing dependencies, honest type signatures, and no silent fallbacks. Don't break existing functionality — run any existing tests before and after your changes. If any tests fail after your changes, fix your code until all tests pass. If your changes introduce new tooling or build artifacts that should not be tracked (e.g., .pytest_cache/, dist/, build/, .venv/, *.egg-info/, node_modules/, bin/, obj/), add the appropriate patterns to .gitignore. If you add new patterns, also run ``git rm --cached`` on any matching files already tracked by git. When you finish each task, check it off in the plan file by changing its ``- [ ]`` to ``- [x]``, $gitInstruction.
-"@ --yolo 2>&1 | ForEach-Object { Write-Host $_; $_ | Out-File -FilePath $LogFile -Append }
+"@ --yolo $(if ($Model) { "--model $Model" }) 2>&1 | ForEach-Object { Write-Host $_; $_ | Out-File -FilePath $LogFile -Append }
     if ($LASTEXITCODE -ne 0) { Log "BUILD FAILED (exit $LASTEXITCODE)" Red; exit 1 }
 }
 catch {

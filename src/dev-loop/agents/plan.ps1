@@ -12,7 +12,9 @@ param(
     [string]$RunDir,
 
     [Parameter(Mandatory)]
-    [string]$LogFile
+    [string]$LogFile,
+
+    [string]$Model
 )
 
 Set-StrictMode -Version Latest
@@ -62,7 +64,7 @@ OUTPUT FORMAT — follow this strictly:
 
 OUTPUT INSTRUCTIONS: Write your complete plan to $planOutputFile
 Also print the plan to stdout.
-"@ --yolo 2>&1 | ForEach-Object { Write-Host $_; $_ | Out-File -FilePath $LogFile -Append }
+"@ --yolo $(if ($Model) { "--model $Model" }) 2>&1 | ForEach-Object { Write-Host $_; $_ | Out-File -FilePath $LogFile -Append }
     if ($LASTEXITCODE -ne 0) { Log "PLAN FAILED (exit $LASTEXITCODE)" Red; exit 1 }
 
     if (Test-Path $planOutputFile) {

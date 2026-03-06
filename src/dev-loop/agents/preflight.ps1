@@ -13,7 +13,9 @@ param(
     [string]$RunDir,
 
     [Parameter(Mandatory)]
-    [string]$LogFile
+    [string]$LogFile,
+
+    [string]$Model
 )
 
 Set-StrictMode -Version Latest
@@ -104,7 +106,7 @@ SCOPE CONSTRAINT: Only read the constitution file. Do not read any other files.
 OUTPUT RULES:
 - If you find ZERO issues, or only LOW-severity issues: print exactly "PREFLIGHT: PASS" to stdout. Do NOT create any files.
 - If you find any HIGH-severity issues: write ALL findings (both HIGH and LOW) to $findingsFile and print "PREFLIGHT: FINDINGS" as the first line of that file, followed by each finding. Also print the findings to stdout.
-"@ --yolo 2>&1 | ForEach-Object { Write-Host $_; $_ | Out-File -FilePath $LogFile -Append }
+"@ --yolo $(if ($Model) { "--model $Model" }) 2>&1 | ForEach-Object { Write-Host $_; $_ | Out-File -FilePath $LogFile -Append }
 
     if (Test-Path $findingsFile) {
         Log "Pre-flight findings saved to: $findingsFile" Yellow

@@ -12,7 +12,9 @@ param(
     [string]$RunDir,
 
     [Parameter(Mandatory)]
-    [string]$LogFile
+    [string]$LogFile,
+
+    [string]$Model
 )
 
 Set-StrictMode -Version Latest
@@ -63,7 +65,7 @@ ACTION:
 - If the plan has issues on ANY criterion, **edit $planFile directly** to fix them — add missing tasks, reorder, split/merge tasks, remove out-of-scope work. Preserve the plan's existing format.
 - If the plan is already correct on all criteria, leave it unchanged.
 - Do NOT create any new files. The plan file is the only output.
-"@ --yolo 2>&1 | ForEach-Object { Write-Host $_; $_ | Out-File -FilePath $LogFile -Append }
+"@ --yolo $(if ($Model) { "--model $Model" }) 2>&1 | ForEach-Object { Write-Host $_; $_ | Out-File -FilePath $LogFile -Append }
     if ($LASTEXITCODE -ne 0) { Log "PLAN EVALUATION FAILED (exit $LASTEXITCODE)" Red; exit 1 }
 
     Log "Plan review complete: $planFile" DarkGray

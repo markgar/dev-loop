@@ -8,13 +8,18 @@ param(
     [Parameter(Mandatory)]
     [string]$ProjectDir,
 
-    [switch]$GitPush
+    [switch]$GitPush,
+
+    [string]$Model
 )
 
 Import-Module "$PSScriptRoot/src/dev-loop/dev-loop.psd1" -Force
 
+$modelArgs = @{}
+if ($Model) { $modelArgs['Model'] = $Model }
+
 try {
-    Invoke-DevLoop -SpecsDir $SpecsDir -ProjectDir $ProjectDir -GitPush:$GitPush
+    Invoke-DevLoop -SpecsDir $SpecsDir -ProjectDir $ProjectDir -GitPush:$GitPush @modelArgs
 }
 catch {
     Write-Host "ERROR: $_" -ForegroundColor Red
