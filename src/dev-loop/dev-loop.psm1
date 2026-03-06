@@ -143,7 +143,7 @@ function Invoke-DevLoop {
         }
 
         $discovered = Get-Content $discoveryFile -Raw | ConvertFrom-Json
-        $phaseNames = @('plan', 'plan-eval', 'build', 'review', 'test')
+        $phaseNames = @('plan', 'plan-eval', 'build', 'review')
 
         $specs = @()
         foreach ($d in $discovered) {
@@ -170,7 +170,7 @@ function Invoke-DevLoop {
 
         # ── Manifest-driven spec loop ─────────────────────────────────────
         $manifest = Read-Manifest
-        $phaseOrder = @('plan', 'plan-eval', 'build', 'review', 'test')
+        $phaseOrder = @('plan', 'plan-eval', 'build', 'review')
 
         Log "========== STARTING SPEC LOOP ($($manifest.specs.Count) spec(s)) ==========" Cyan
 
@@ -226,14 +226,6 @@ function Invoke-DevLoop {
                         & "$script:ModuleRoot\agents\review.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile -GitPush:$GitPush @modelArgs
                         if ($LASTEXITCODE -ne 0) { throw "REVIEW FAILED for $specName" }
                         Stamp-Phase $specName 'review'
-                    }
-                    'test' {
-                        # DISABLED — uncomment to re-enable test phase
-                        # Start-Phase $specName 'test'
-                        # & "$script:ModuleRoot\agents\test.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile -GitPush:$GitPush @modelArgs
-                        # if ($LASTEXITCODE -ne 0) { throw "TEST FAILED for $specName" }
-                        # Stamp-Phase $specName 'test'
-                        Log "  [test] SKIPPED (disabled)" DarkGray
                     }
                 }
             }

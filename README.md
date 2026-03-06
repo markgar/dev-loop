@@ -81,8 +81,7 @@ Invoke-DevLoop -SpecsDir <path> -ProjectDir <path> [-GitPush]
         ├── plan.ps1       — Decompose spec into commit-sized tasks
         ├── plan-eval.ps1  — Review & fix the plan in-place
         ├── build.ps1      — Build next unchecked task (loops until plan complete)
-        ├── review.ps1     — Senior SWE code review + standards capture
-        └── test.ps1       — Write/run tests, validate against spec
+        └── review.ps1     — Senior SWE code review + standards capture
 ```
 
 A `CONSTITUTION.md` at the specs root defines product constraints included in every prompt.
