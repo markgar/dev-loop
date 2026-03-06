@@ -51,22 +51,6 @@ try {
     New-Item -ItemType Directory -Path $runDir | Out-Null
     Write-Host "Run directory: $runDir" -ForegroundColor DarkGray  # Log not available yet
 
-    # ── Branch setup (isolate work in the target project) ─────────────
-    $branchName = 'dev-loop'
-    $currentBranch = (git -C $ProjectDir branch --show-current 2>$null)
-    if ($currentBranch -ne $branchName) {
-        # Create or switch to the dev-loop branch
-        $branchExists = git -C $ProjectDir branch --list $branchName 2>$null
-        if ($branchExists) {
-            git -C $ProjectDir checkout $branchName
-        } else {
-            git -C $ProjectDir checkout -b $branchName
-        }
-        Write-Host "On branch: $branchName" -ForegroundColor Green  # Log not available yet
-    } else {
-        Write-Host "Already on branch: $branchName" -ForegroundColor Green  # Log not available yet
-    }
-
     # ── Logging setup ─────────────────────────────────────────────────
     $logFile = Join-Path $runDir 'dev-loop.log'
     function Log { param([string]$Message, [string]$Color = 'White')
