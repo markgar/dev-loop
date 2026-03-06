@@ -1,9 +1,11 @@
 name: Publish to PowerShell Gallery
 
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g. 0.2.0)'
+        required: true
 
 jobs:
   publish:
@@ -15,15 +17,15 @@ jobs:
         shell: pwsh
         run: Test-ModuleManifest -Path ./src/dev-loop/dev-loop.psd1
 
-      - name: Verify tag matches manifest version
+      - name: Verify input matches manifest version
         shell: pwsh
         run: |
           $manifest = Import-PowerShellDataFile ./src/dev-loop/dev-loop.psd1
-          $tagVersion = "${{ github.ref_name }}".TrimStart('v')
-          if ($manifest.ModuleVersion -ne $tagVersion) {
-            throw "Tag version ($tagVersion) does not match manifest version ($($manifest.ModuleVersion))"
+          $inputVersion = '${{ github.event.inputs.version }}'
+          if ($manifest.ModuleVersion -ne $inputVersion) {
+            throw "Input version ($inputVersion) does not match manifest version ($($manifest.ModuleVersion)). Bump the manifest first."
           }
-          Write-Host "Version confirmed: $tagVersion"
+          Write-Host "Version confirmed: $inputVersion"
 
       - name: Publish module
         shell: pwsh
