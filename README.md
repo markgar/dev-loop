@@ -68,7 +68,7 @@ git init
 '<path-to-dev-loop>/dev-loop.ps1' -SpecsDir '<path-to-dev-loop>/sample-spec' -ProjectDir .
 ```
 
-The dev-loop will plan, build, review, and test each spec in order — generating the entire project from scratch in your target directory.
+The dev-loop will plan, build, and review each spec in order — generating the entire project from scratch in your target directory.
 
 ## How It Works
 
@@ -83,6 +83,16 @@ Invoke-DevLoop -SpecsDir '<path>' -ProjectDir '<path>' [-GitPush]
         ├── build.ps1      — Build next unchecked task (loops until plan complete)
         └── review.ps1     — Senior SWE code review + standards capture
 ```
+
+### The Phases
+
+| Phase | Agent | What it does |
+|-------|-------|-------------|
+| **Preflight** | `preflight.ps1` | Scans the specs directory, discovers numbered spec files, and reviews `CONSTITUTION.md` for anything that would interfere with the dev-loop process. Runs once per invocation. |
+| **Plan** | `plan.ps1` | Reads a single spec and the constitution, then produces a checklist of commit-sized tasks in `plan-<spec>.md`. Each task = one git commit. |
+| **Plan Eval** | `plan-eval.ps1` | Reviews the generated plan against the spec for completeness, ordering, coherence, and scope. Fixes the plan file in-place if anything is off. |
+| **Build** | `build.ps1` | Picks up the next unchecked task from the plan, implements it, runs existing tests, checks it off, and commits. Loops until all tasks are checked. |
+| **Review** | `review.ps1` | Acts as a senior SWE reviewer — fixes code quality issues, updates `ENGINEERING_STANDARDS.md` with reusable learnings, keeps `copilot-instructions.md` in sync, and ensures minimal documentation (README, CHANGELOG) exists. |
 
 A `CONSTITUTION.md` at the specs root defines product constraints included in every prompt.
 
