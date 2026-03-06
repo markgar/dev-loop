@@ -8,7 +8,7 @@
   - Key files: `BookstoreApi/Program.cs`, `BookstoreApi/Models/Book.cs`, `BookstoreApi/Data/BookStore.cs`
   - Test: verify seed data is populated on startup
 
-- [ ] **Task 2: GET endpoints — list and view books** — Implement `GET /books` and `GET /books/{id}` with tests for happy paths and 404.
+- [x] **Task 2: GET endpoints — list and view books** — Implement `GET /books` and `GET /books/{id}` with tests for happy paths and 404.
   - `GET /books` → 200 + JSON array of all books
   - `GET /books/{id}` → 200 + single book, or 404 `{"error": "Book not found"}`
   - Key files: `BookstoreApi/Controllers/BooksController.cs`
