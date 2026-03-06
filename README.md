@@ -4,7 +4,14 @@
 [![PowerShell Gallery Downloads](https://img.shields.io/powershellgallery/dt/dev-loop)](https://www.powershellgallery.com/packages/dev-loop)
 [![License](https://img.shields.io/github/license/markgar/dev-loop)](LICENSE)
 
-Automated development loop powered by [GitHub Copilot CLI](https://docs.github.com/en/copilot). Each phase shells out to `copilot -p "..." --yolo` with a crafted prompt.
+Automated development loop powered by [GitHub Copilot CLI](https://docs.github.com/en/copilot). Each phase shells out to `copilot -p "..." --yolo` with a crafted prompt. Specs are numbered Markdown files (`NN-slug.md`) processed one at a time — plan, build, review, and test — all phases to completion before moving to the next.
+
+## Requirements
+
+- [GitHub Copilot CLI](https://docs.github.com/en/copilot) (`copilot` on `$env:PATH`)
+- PowerShell 7+
+- Git
+- The target project directory must be a git repository (`git init`)
 
 ## Install
 
@@ -34,6 +41,25 @@ Invoke-DevLoop -SpecsDir <path> -ProjectDir <path> [-GitPush]
 .\dev-loop.ps1 -SpecsDir <path> -ProjectDir <path> [-GitPush]
 ```
 
+### Quick Start with Sample Specs
+
+The repo includes sample specs in [spec-kit](https://github.com/github/spec-kit) style — a `CONSTITUTION.md` and two numbered specs that describe a bookstore REST API:
+
+- `CONSTITUTION.md` — Product constraints (tech stack, conventions, principles)
+- `01-bookstore-rest-api.md` — Core CRUD endpoints for a bookstore API
+- `02-book-search-filtering.md` — Search and filtering capabilities
+
+```powershell
+mkdir ~/my-bookstore
+cd ~/my-bookstore
+git init
+
+# Point dev-loop at the sample specs
+<path-to-dev-loop>/dev-loop.ps1 -SpecsDir <path-to-dev-loop>/sample-spec -ProjectDir .
+```
+
+The dev-loop will plan, build, review, and test each spec in order — generating the entire project from scratch in your target directory.
+
 ## How It Works
 
 ```
@@ -49,9 +75,9 @@ Invoke-DevLoop -SpecsDir <path> -ProjectDir <path> [-GitPush]
         └── test.ps1       — Write/run tests, validate against spec
 ```
 
-Specs are numbered Markdown files (`NN-slug.md`) in the specs directory. A `CONSTITUTION.md` at the specs root defines product constraints included in every prompt. The loop processes one spec at a time, all phases to completion, before moving to the next.
+A `CONSTITUTION.md` at the specs root defines product constraints included in every prompt.
 
-## Tracking
+### Tracking
 
 Each run creates a timestamped directory under `.dev-loop/` in the target project:
 
@@ -69,28 +95,6 @@ Each run creates a timestamped directory under `.dev-loop/` in the target projec
 
 Phase timestamps in `manifest.json` enable checkpoint/resume — completed phases are skipped on re-run.
 
-## Try It with the Sample Specs
-
-The repo includes sample specs in [spec-kit](https://github.com/github/spec-kit) style — a `CONSTITUTION.md` and two numbered specs that describe a bookstore REST API. To try it out, create a fresh project directory somewhere outside this repo and point `dev-loop` at it:
-
-```powershell
-# 1. Create a new project directory wherever you like
-mkdir ~/my-bookstore
-cd ~/my-bookstore
-git init  # required — dev-loop expects a git repo
-
-# 2. Run the dev-loop, pointing -SpecsDir at the sample specs in this repo
-#    and -ProjectDir at your new project
-<path-to-dev-loop>/dev-loop.ps1 -SpecsDir <path-to-dev-loop>/sample-spec -ProjectDir .
-```
-
-The specs describe:
-- `CONSTITUTION.md` — Product constraints (tech stack, conventions, principles)
-- `01-bookstore-rest-api.md` — Core CRUD endpoints for a bookstore API
-- `02-book-search-filtering.md` — Search and filtering capabilities
-
-The dev-loop will plan, build, review, and test each spec in order — generating the entire project from scratch in your target directory.
-
 ## Project Structure
 
 ```
@@ -104,13 +108,6 @@ dev-loop/
       dev-loop.psm1         # Module implementation (Invoke-DevLoop)
       agents/               # Phase scripts
 ```
-
-## Requirements
-
-- [GitHub Copilot CLI](https://docs.github.com/en/copilot) (`copilot` on `$env:PATH`)
-- PowerShell 7+
-- Git
-- The target project directory must be a git repository (`git init`). The dev-loop will exit with an error if it isn't.
 
 ## Contributing
 
