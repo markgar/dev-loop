@@ -19,8 +19,8 @@
     PrivateData = @{
         PSData = @{
             Tags       = @('copilot', 'automation', 'dev-loop', 'codegen', 'agents')
-            LicenseUri = ''   # TODO: Add license URI before publishing
-            ProjectUri = ''   # TODO: Add project URI before publishing
+            LicenseUri = 'https://github.com/markgar/dev-loop/blob/master/LICENSE'
+            ProjectUri = 'https://github.com/markgar/dev-loop'
         }
     }
 }

@@ -1,5 +1,9 @@
 # dev-loop
 
+[![PowerShell Gallery Version](https://img.shields.io/powershellgallery/v/dev-loop)](https://www.powershellgallery.com/packages/dev-loop)
+[![PowerShell Gallery Downloads](https://img.shields.io/powershellgallery/dt/dev-loop)](https://www.powershellgallery.com/packages/dev-loop)
+[![License](https://img.shields.io/github/license/markgar/dev-loop)](LICENSE)
+
 Automated development loop powered by [GitHub Copilot CLI](https://docs.github.com/en/copilot). Each phase shells out to `copilot -p "..." --yolo` with a crafted prompt.
 
 ## Install
@@ -107,3 +111,11 @@ dev-loop/
 - PowerShell 7+
 - Git
 - The target project directory must be a git repository (`git init`). The dev-loop will exit with an error if it isn't.
+
+## Contributing
+
+Contributions are welcome! Please open an issue to discuss a change before submitting a pull request.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
