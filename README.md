@@ -95,6 +95,22 @@ Each run creates a timestamped directory under `.dev-loop/` in the target projec
 
 Phase timestamps in `manifest.json` enable checkpoint/resume — completed phases are skipped on re-run.
 
+### Inspecting a Run with GitHub Copilot
+
+While dev-loop is running (or after it finishes), open the target project directory in VS Code:
+
+```
+code ~/my-bookstore
+```
+
+The `.dev-loop/` tracking directory contains logs, plans, and manifests that GitHub Copilot can read. Open Copilot Chat and ask things like:
+
+- *"What phase of the dev-loop build are we in right now?"*
+- *"Summarize what happened in spec 01."*
+- *"Are there any failures in the latest run?"*
+
+Because everything is plain text, Copilot has full context to answer questions about the current state of the build.
+
 ## Project Structure
 
 ```
