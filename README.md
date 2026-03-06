@@ -2,10 +2,38 @@
 
 Automated development loop powered by [GitHub Copilot CLI](https://docs.github.com/en/copilot). Each phase shells out to `copilot -p "..." --yolo` with a crafted prompt.
 
+## Install
+
+### From PowerShell Gallery
+
+```powershell
+Install-Module -Name dev-loop
+```
+
+### From Source
+
+```powershell
+git clone https://github.com/markgar/dev-loop.git
+```
+
+## Usage
+
+### As a module (installed from Gallery)
+
+```powershell
+Invoke-DevLoop -SpecsDir <path> -ProjectDir <path> [-GitPush]
+```
+
+### As a script (cloned from repo)
+
+```powershell
+.\dev-loop.ps1 -SpecsDir <path> -ProjectDir <path> [-GitPush]
+```
+
 ## How It Works
 
 ```
-.\dev-loop.ps1 -SpecsDir <path> -ProjectDir <path> [-GitPush]
+Invoke-DevLoop -SpecsDir <path> -ProjectDir <path> [-GitPush]
     │
     ├── preflight.ps1  — Discover specs, constitution review
     │
@@ -49,7 +77,7 @@ git init  # required — dev-loop expects a git repo
 
 # 2. Run the dev-loop, pointing -SpecsDir at the sample specs in this repo
 #    and -ProjectDir at your new project
-<path-to-dev-loop>/dev-loop.ps1 -SpecsDir <path-to-dev-loop>/specs -ProjectDir .
+<path-to-dev-loop>/dev-loop.ps1 -SpecsDir <path-to-dev-loop>/sample-spec -ProjectDir .
 ```
 
 The specs describe:
@@ -58,6 +86,20 @@ The specs describe:
 - `02-book-search-filtering.md` — Search and filtering capabilities
 
 The dev-loop will plan, build, review, and test each spec in order — generating the entire project from scratch in your target directory.
+
+## Project Structure
+
+```
+dev-loop/
+  dev-loop.ps1              # Thin launcher (clone-and-run convenience)
+  README.md
+  sample-spec/              # Sample specs (not published to Gallery)
+  src/
+    dev-loop/               # PowerShell module (published to Gallery)
+      dev-loop.psd1         # Module manifest
+      dev-loop.psm1         # Module implementation (Invoke-DevLoop)
+      agents/               # Phase scripts
+```
 
 ## Requirements
 
