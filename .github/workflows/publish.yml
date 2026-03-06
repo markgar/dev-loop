@@ -2,10 +2,6 @@ name: Publish to PowerShell Gallery
 
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to publish (e.g. 0.2.0)'
-        required: true
 
 jobs:
   publish:
@@ -15,17 +11,9 @@ jobs:
 
       - name: Validate module manifest
         shell: pwsh
-        run: Test-ModuleManifest -Path ./src/dev-loop/dev-loop.psd1
-
-      - name: Verify input matches manifest version
-        shell: pwsh
         run: |
-          $manifest = Import-PowerShellDataFile ./src/dev-loop/dev-loop.psd1
-          $inputVersion = '${{ github.event.inputs.version }}'
-          if ($manifest.ModuleVersion -ne $inputVersion) {
-            throw "Input version ($inputVersion) does not match manifest version ($($manifest.ModuleVersion)). Bump the manifest first."
-          }
-          Write-Host "Version confirmed: $inputVersion"
+          $manifest = Test-ModuleManifest -Path ./src/dev-loop/dev-loop.psd1
+          Write-Host "Publishing version: $($manifest.Version)"
 
       - name: Publish module
         shell: pwsh
