@@ -1,7 +1,7 @@
 @{
     # Module identity
     RootModule = 'dev-loop.psm1'
-    ModuleVersion = '0.2.0'
+    ModuleVersion = '0.3.0'
     GUID = '32c17d8f-3241-4f4e-b961-f2c2f2aed684'
 
     # Metadata
