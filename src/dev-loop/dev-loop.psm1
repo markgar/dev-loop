@@ -27,11 +27,14 @@ function Invoke-DevLoop {
         Invoke-DevLoop -SpecsDir ./specs -ProjectDir ~/my-project -Model claude-sonnet-4
     #>
     [CmdletBinding()]
+    [OutputType([void])]
     param(
         [Parameter(Mandatory)]
+        [ValidateScript({ Test-Path $_ -PathType Container })]
         [string]$SpecsDir,
 
         [Parameter(Mandatory)]
+        [ValidateScript({ Test-Path $_ -PathType Container })]
         [string]$ProjectDir,
 
         [switch]$GitPush,
@@ -39,10 +42,11 @@ function Invoke-DevLoop {
         [string]$Model
     )
 
-    Set-StrictMode -Version Latest
-    $ErrorActionPreference = 'Stop'
-    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-    $OutputEncoding = [System.Text.Encoding]::UTF8
+    . "$script:ModuleRoot\agents\_common.ps1"
+
+    if (-not (Get-Command 'copilot' -ErrorAction SilentlyContinue)) {
+        throw "GitHub Copilot CLI ('copilot') not found on PATH. Install it first: https://docs.github.com/en/copilot"
+    }
 
     $SpecsDir = (Resolve-Path $SpecsDir).Path
     $ProjectDir = (Resolve-Path $ProjectDir).Path
@@ -93,12 +97,8 @@ function Invoke-DevLoop {
         Write-Host "Run directory: $runDir" -ForegroundColor DarkGray
 
         # ── Logging setup ─────────────────────────────────────────────────
-        $logFile = Join-Path $runDir 'dev-loop.log'
-        function Log { param([string]$Message, [string]$Color = 'White')
-            Write-Host $Message -ForegroundColor $Color
-            "$(Get-Date -Format 'HH:mm:ss') $Message" | Out-File -FilePath $logFile -Append
-        }
-        Log "Logging to: $logFile" DarkGray
+        $LogFile = Join-Path $runDir 'dev-loop.log'
+        Log "Logging to: $LogFile" DarkGray
 
         # ── Manifest helpers ──────────────────────────────────────────────
         $manifestFile = Join-Path $runDir 'manifest.json'
@@ -119,12 +119,12 @@ function Invoke-DevLoop {
             Log "  Started $phaseName for $specName" DarkYellow
         }
 
-        function Stamp-Phase($specName, $phaseName) {
+        function Complete-Phase($specName, $phaseName) {
             $m = Read-Manifest
             $spec = $m.specs | Where-Object { $_.name -eq $specName }
             $spec.phases.$phaseName.completed = (Get-Date -Format 'o')
             Save-Manifest $m
-            Log "  Stamped $phaseName for $specName" Green
+            Log "  Completed $phaseName for $specName" Green
         }
 
         # ── Pre-flight (discovers specs, constitution check) ────────────
@@ -196,18 +196,19 @@ function Invoke-DevLoop {
                         Start-Phase $specName 'plan'
                         & "$script:ModuleRoot\agents\plan.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile @modelArgs
                         if ($LASTEXITCODE -ne 0) { throw "PLAN FAILED for $specName" }
-                        Stamp-Phase $specName 'plan'
+                        Complete-Phase $specName 'plan'
                     }
                     'plan-eval' {
                         Start-Phase $specName 'plan-eval'
                         & "$script:ModuleRoot\agents\plan-eval.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile @modelArgs
                         if ($LASTEXITCODE -ne 0) { throw "PLAN-EVAL FAILED for $specName" }
-                        Stamp-Phase $specName 'plan-eval'
+                        Complete-Phase $specName 'plan-eval'
                     }
                     'build' {
                         Start-Phase $specName 'build'
                         $planFile = Join-Path $runDir "plan-$specName.md"
                         $buildIteration = 0
+                        $maxBuildIterations = 20
                         while ($true) {
                             $planContent = Get-Content $planFile -Raw
                             if ($planContent -notmatch '- \[ \]') {
@@ -215,17 +216,20 @@ function Invoke-DevLoop {
                                 break
                             }
                             $buildIteration++
+                            if ($buildIteration -gt $maxBuildIterations) {
+                                throw "BUILD exceeded $maxBuildIterations iterations for $specName — possible infinite loop"
+                            }
                             Log "  [build] iteration $buildIteration — unchecked tasks remain" Yellow
                             & "$script:ModuleRoot\agents\build.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile -GitPush:$GitPush @modelArgs
                             if ($LASTEXITCODE -ne 0) { throw "BUILD FAILED for $specName (iteration $buildIteration)" }
                         }
-                        Stamp-Phase $specName 'build'
+                        Complete-Phase $specName 'build'
                     }
                     'review' {
                         Start-Phase $specName 'review'
                         & "$script:ModuleRoot\agents\review.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile -GitPush:$GitPush @modelArgs
                         if ($LASTEXITCODE -ne 0) { throw "REVIEW FAILED for $specName" }
-                        Stamp-Phase $specName 'review'
+                        Complete-Phase $specName 'review'
                     }
                 }
             }
@@ -237,9 +241,10 @@ function Invoke-DevLoop {
     }
     catch {
         $errMsg = "FATAL [dev-loop]: $_"
-        Write-Host $errMsg -ForegroundColor Red
-        if ($logFile -and (Test-Path (Split-Path $logFile))) {
-            "$(Get-Date -Format 'HH:mm:ss') $errMsg" | Out-File -FilePath $logFile -Append
+        if ($LogFile) {
+            Log $errMsg Red
+        } else {
+            Write-Host $errMsg -ForegroundColor Red
         }
         throw
     }

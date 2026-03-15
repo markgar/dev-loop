@@ -18,5 +18,5 @@
       ]
     }
   },
-  "postCreateCommand": "pwsh -c 'Write-Host \"dev-loop ready — run ./dev-loop.ps1 -SpecsDir <path>\"'"
+  "postCreateCommand": "pwsh -c 'Install-Module Pester -Force -Scope CurrentUser; Install-Module PSScriptAnalyzer -Force -Scope CurrentUser; Write-Host \"dev-loop ready\"'"
 }

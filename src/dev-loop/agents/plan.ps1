@@ -17,31 +17,17 @@ param(
     [string]$Model
 )
 
-Set-StrictMode -Version Latest
-$ErrorActionPreference = 'Stop'
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$OutputEncoding = [System.Text.Encoding]::UTF8
+. "$PSScriptRoot\_common.ps1"
 
-# Work from the target project directory
-Push-Location $ProjectDir
+Invoke-AgentBlock -AgentName 'plan' -ProjectDir $ProjectDir -LogFile $LogFile -Action {
+    $paths = Get-AgentPaths -SpecFile $SpecFile -RunDir $RunDir
+    $constitutionPath = $paths.ConstitutionPath
+    $planOutputFile   = $paths.PlanFile
 
-try {
-    $specBaseName = [System.IO.Path]::GetFileNameWithoutExtension($SpecFile)
-    $SpecsDir = Split-Path $SpecFile -Parent
-    $constitutionPath = Join-Path $SpecsDir 'CONSTITUTION.md'
-
-    # ── Logging ───────────────────────────────────────────────────────
-    function Log { param([string]$Message, [string]$Color = 'White')
-        Write-Host $Message -ForegroundColor $Color
-        "$(Get-Date -Format 'HH:mm:ss') $Message" | Out-File -FilePath $LogFile -Append
-    }
-
-    Log "========== INITIAL PLAN: $specBaseName ==========" Blue
+    Log "========== INITIAL PLAN: $($paths.SpecBaseName) ==========" Blue
     Log "Spec file : $SpecFile" DarkGray
 
-    $planOutputFile = Join-Path $RunDir "plan-$specBaseName.md"
-
-    & copilot -p @"
+    Invoke-Copilot -LogFile $LogFile -Model $Model -Prompt @"
 You are a planning agent. Turn the input spec into a short, scannable checklist of tasks. Each task = one git commit.
 
 Before planning, read the project constitution at $constitutionPath — its Project Principles are inviolable constraints. If a task would violate a principle, redesign the task.
@@ -64,8 +50,7 @@ OUTPUT FORMAT — follow this strictly:
 
 OUTPUT INSTRUCTIONS: Write your complete plan to $planOutputFile
 Also print the plan to stdout.
-"@ --yolo $(if ($Model) { "--model $Model" }) 2>&1 | ForEach-Object { Write-Host $_; $_ | Out-File -FilePath $LogFile -Append }
-    if ($LASTEXITCODE -ne 0) { Log "PLAN FAILED (exit $LASTEXITCODE)" Red; exit 1 }
+"@
 
     if (Test-Path $planOutputFile) {
         Log "Plan output saved to: $planOutputFile" DarkGray
@@ -75,13 +60,4 @@ Also print the plan to stdout.
     } else {
         Log "Warning: copilot did not write plan output file at $planOutputFile" Yellow
     }
-}
-catch {
-    $errMsg = "FATAL [plan]: $_"
-    Write-Host $errMsg -ForegroundColor Red
-    "$(Get-Date -Format 'HH:mm:ss') $errMsg" | Out-File -FilePath $LogFile -Append
-    throw
-}
-finally {
-    Pop-Location
 }

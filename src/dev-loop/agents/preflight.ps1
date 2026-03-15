@@ -18,20 +18,9 @@ param(
     [string]$Model
 )
 
-Set-StrictMode -Version Latest
-$ErrorActionPreference = 'Stop'
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$OutputEncoding = [System.Text.Encoding]::UTF8
+. "$PSScriptRoot\_common.ps1"
 
-# Work from the target project directory
-Push-Location $ProjectDir
-
-try {
-    # ── Logging ───────────────────────────────────────────────────────
-    function Log { param([string]$Message, [string]$Color = 'White')
-        Write-Host $Message -ForegroundColor $Color
-        "$(Get-Date -Format 'HH:mm:ss') $Message" | Out-File -FilePath $LogFile -Append
-    }
+Invoke-AgentBlock -AgentName 'preflight' -ProjectDir $ProjectDir -LogFile $LogFile -Action {
 
     Log "========== PRE-FLIGHT CHECK ==========" Blue
 
@@ -39,14 +28,14 @@ try {
     Log "--- Spec Discovery ---" Blue
     Log "Specs directory : $SpecsDir" DarkGray
 
-    $specFiles = Get-ChildItem -Path $SpecsDir -Filter '*.md' |
+    $specFiles = @(Get-ChildItem -Path $SpecsDir -Filter '*.md' |
         Where-Object { $_.Name -match '^\d{2}-' } |
-        Sort-Object Name
+        Sort-Object Name)
 
     if ($specFiles.Count -eq 0) {
         Log "No numbered spec files (NN-*.md) found in $SpecsDir — nothing to do." Yellow
         Log "Are you using spec-kit style specs? See https://github.com/github/spec-kit" Yellow
-        exit 1
+        throw "No numbered spec files found in $SpecsDir"
     }
 
     Log "Found $($specFiles.Count) spec(s):" DarkGray
@@ -72,12 +61,12 @@ try {
         Log "No CONSTITUTION.md found at $constitutionPath — skipping constitution check." Yellow
         Log "Are you using spec-kit style specs? See https://github.com/github/spec-kit" Yellow
         Log "Pre-flight complete (no constitution)." Green
-        exit 0
+        return
     }
 
     $findingsFile = Join-Path $RunDir 'preflight-findings.md'
 
-    & copilot -p @"
+    Invoke-Copilot -LogFile $LogFile -Model $Model -Prompt @"
 You are a pre-flight reviewer. Your job is to review a project constitution and make sure it does not interfere with how the dev-loop operates.
 
 A constitution can say ANYTHING about the product itself — constraints, architecture, naming conventions, quality gates, implementation preferences, whatever the author wants. That's all fair game.
@@ -106,23 +95,14 @@ SCOPE CONSTRAINT: Only read the constitution file. Do not read any other files.
 OUTPUT RULES:
 - If you find ZERO issues, or only LOW-severity issues: print exactly "PREFLIGHT: PASS" to stdout. Do NOT create any files.
 - If you find any HIGH-severity issues: write ALL findings (both HIGH and LOW) to $findingsFile and print "PREFLIGHT: FINDINGS" as the first line of that file, followed by each finding. Also print the findings to stdout.
-"@ --yolo $(if ($Model) { "--model $Model" }) 2>&1 | ForEach-Object { Write-Host $_; $_ | Out-File -FilePath $LogFile -Append }
+"@
 
     if (Test-Path $findingsFile) {
         Log "Pre-flight findings saved to: $findingsFile" Yellow
         Log "Review the findings and update CONSTITUTION.md before running the dev-loop." Yellow
-        exit 1
+        throw "Pre-flight findings require review: $findingsFile"
     }
 
     Log "Pre-flight complete." Green
-    exit 0
-}
-catch {
-    $errMsg = "FATAL [preflight]: $_"
-    Write-Host $errMsg -ForegroundColor Red
-    "$(Get-Date -Format 'HH:mm:ss') $errMsg" | Out-File -FilePath $LogFile -Append
-    throw
-}
-finally {
-    Pop-Location
+    return
 }

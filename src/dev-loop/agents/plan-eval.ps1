@@ -17,32 +17,20 @@ param(
     [string]$Model
 )
 
-Set-StrictMode -Version Latest
-$ErrorActionPreference = 'Stop'
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$OutputEncoding = [System.Text.Encoding]::UTF8
+. "$PSScriptRoot\_common.ps1"
 
-# Work from the target project directory
-Push-Location $ProjectDir
+Invoke-AgentBlock -AgentName 'plan-eval' -ProjectDir $ProjectDir -LogFile $LogFile -Action {
+    $paths = Get-AgentPaths -SpecFile $SpecFile -RunDir $RunDir
+    $planFile = $paths.PlanFile
 
-try {
-    $specBaseName = [System.IO.Path]::GetFileNameWithoutExtension($SpecFile)
-    $planFile = Join-Path $RunDir "plan-$specBaseName.md"
-
-    # ── Logging ───────────────────────────────────────────────────────
-    function Log { param([string]$Message, [string]$Color = 'White')
-        Write-Host $Message -ForegroundColor $Color
-        "$(Get-Date -Format 'HH:mm:ss') $Message" | Out-File -FilePath $LogFile -Append
-    }
-
-    Log "========== PLAN REVIEW: $specBaseName ==========" Blue
+    Log "========== PLAN REVIEW: $($paths.SpecBaseName) ==========" Blue
 
     if (-not (Test-Path $planFile)) {
         Log "Plan file not found: $planFile" Red
-        exit 1
+        throw "Plan file not found: $planFile"
     }
 
-    & copilot -p @"
+    Invoke-Copilot -LogFile $LogFile -Model $Model -Prompt @"
 You are a plan-evaluation agent. Your job is to review a generated implementation plan against its spec and **fix the plan in-place**.
 
 The plan to review and update is at: $planFile
@@ -65,17 +53,7 @@ ACTION:
 - If the plan has issues on ANY criterion, **edit $planFile directly** to fix them — add missing tasks, reorder, split/merge tasks, remove out-of-scope work. Preserve the plan's existing format.
 - If the plan is already correct on all criteria, leave it unchanged.
 - Do NOT create any new files. The plan file is the only output.
-"@ --yolo $(if ($Model) { "--model $Model" }) 2>&1 | ForEach-Object { Write-Host $_; $_ | Out-File -FilePath $LogFile -Append }
-    if ($LASTEXITCODE -ne 0) { Log "PLAN EVALUATION FAILED (exit $LASTEXITCODE)" Red; exit 1 }
+"@
 
     Log "Plan review complete: $planFile" DarkGray
-}
-catch {
-    $errMsg = "FATAL [plan-eval]: $_"
-    Write-Host $errMsg -ForegroundColor Red
-    "$(Get-Date -Format 'HH:mm:ss') $errMsg" | Out-File -FilePath $LogFile -Append
-    throw
-}
-finally {
-    Pop-Location
 }

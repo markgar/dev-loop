@@ -15,7 +15,6 @@ PSGetModuleInfo.xml
 Thumbs.db
 
 # IDE / Editor
-.vscode/
 *.code-workspace
 .idea/
 
@@ -24,4 +23,5 @@ Thumbs.db
 
 # Temp files
 *.tmp
+*.bak
 *~
