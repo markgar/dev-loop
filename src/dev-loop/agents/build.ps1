@@ -22,15 +22,15 @@ param(
 . "$PSScriptRoot\_common.ps1"
 
 Invoke-AgentBlock -AgentName 'build' -ProjectDir $ProjectDir -LogFile $LogFile -Action {
-    $paths = Get-AgentPaths -SpecFile $SpecFile -RunDir $RunDir
-    $PlanFile         = $paths.PlanFile
+    $paths = Get-AgentPath -SpecFile $SpecFile -RunDir $RunDir
+    $PlanFile = $paths.PlanFile
     $constitutionPath = $paths.ConstitutionPath
-    $devLoopRoot      = $paths.DevLoopRoot
-    $gitInstruction   = Get-GitInstruction -Push:$GitPush
+    $devLoopRoot = $paths.DevLoopRoot
+    $gitInstruction = Get-GitInstruction -Push:$GitPush
 
-    Log "========== BUILD PHASE ==========" Cyan
-    Log "Building spec : $SpecFile" DarkGray
-    Log "Using plan    : $PlanFile" DarkGray
+    Log -LogFile $LogFile "========== BUILD PHASE =========="  Cyan
+    Log -LogFile $LogFile "Building spec : $SpecFile" DarkGray
+    Log -LogFile $LogFile "Using plan    : $PlanFile" DarkGray
     Invoke-Copilot -LogFile $LogFile -Model $Model -Prompt @"
 You are a builder agent. Your job is to implement one spec at a time, using a plan that was already built for you.
 

@@ -22,13 +22,13 @@ param(
 . "$PSScriptRoot\_common.ps1"
 
 Invoke-AgentBlock -AgentName 'review' -ProjectDir $ProjectDir -LogFile $LogFile -Action {
-    $paths = Get-AgentPaths -SpecFile $SpecFile -RunDir $RunDir
+    $paths = Get-AgentPath -SpecFile $SpecFile -RunDir $RunDir
     $constitutionPath = $paths.ConstitutionPath
-    $devLoopRoot      = $paths.DevLoopRoot
-    $gitInstruction   = Get-GitInstruction -Push:$GitPush
+    $devLoopRoot = $paths.DevLoopRoot
+    $gitInstruction = Get-GitInstruction -Push:$GitPush
 
-    Log "========== REVIEW PHASE ==========" Yellow
-    Log "Reviewing spec: $SpecFile" DarkGray
+    Log -LogFile $LogFile "========== REVIEW PHASE =========="  Yellow
+    Log -LogFile $LogFile "Reviewing spec: $SpecFile" DarkGray
     Invoke-Copilot -LogFile $LogFile -Model $Model -Prompt @"
 Before reviewing, read the project constitution at $constitutionPath — its Project Principles are inviolable constraints. Flag any code that violates them.
 

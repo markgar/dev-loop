@@ -43,13 +43,19 @@
         }
 
         PSAlignAssignmentStatement = @{
-            Enable         = $true
-            CheckHashtable = $true
+            Enable         = $false
+            CheckHashtable = $false
         }
     }
 
     ExcludeRules = @(
         # Allow Write-Host for console output in agent scripts
         'PSAvoidUsingWriteHost'
+        # BOM is unnecessary for modern tooling and harmful on Linux
+        'PSUseBOMForUnicodeEncodedFile'
+        # Agent params are consumed inside scriptblocks — not a real unused-parameter issue
+        'PSReviewUnusedParameter'
+        # Internal helpers, not user-facing cmdlets
+        'PSUseShouldProcessForStateChangingFunctions'
     )
 }

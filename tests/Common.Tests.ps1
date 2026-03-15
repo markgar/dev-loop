@@ -7,13 +7,12 @@ BeforeAll {
 
 Describe 'Log' {
     BeforeAll {
-        # Each test needs a fresh LogFile
         $script:LogFile = Join-Path $TestDrive 'test.log'
         . $script:CommonPath
     }
 
     It 'writes message to host and appends to log file' {
-        Log 'hello world' 'White'
+        Log -LogFile $script:LogFile 'hello world' 'White'
 
         $script:LogFile | Should -Exist
         $content = Get-Content $script:LogFile -Raw
@@ -22,7 +21,7 @@ Describe 'Log' {
 
     It 'prepends a timestamp in HH:mm:ss format' {
         $script:LogFile = Join-Path $TestDrive 'ts.log'
-        Log 'timestamp check' 'Gray'
+        Log -LogFile $script:LogFile 'timestamp check' 'Gray'
 
         $line = Get-Content $script:LogFile
         $line | Should -Match '^\d{2}:\d{2}:\d{2} timestamp check$'
@@ -30,8 +29,8 @@ Describe 'Log' {
 
     It 'appends multiple messages to the same file' {
         $script:LogFile = Join-Path $TestDrive 'multi.log'
-        Log 'first' 'White'
-        Log 'second' 'White'
+        Log -LogFile $script:LogFile 'first' 'White'
+        Log -LogFile $script:LogFile 'second' 'White'
 
         $lines = Get-Content $script:LogFile
         $lines.Count | Should -Be 2
@@ -42,7 +41,7 @@ Describe 'Log' {
     It 'defaults Color to White when not specified' {
         $script:LogFile = Join-Path $TestDrive 'default.log'
         # Log should not throw when called with just a message
-        { Log 'default color' } | Should -Not -Throw
+        { Log -LogFile $script:LogFile 'default color' } | Should -Not -Throw
     }
 }
 
@@ -64,7 +63,7 @@ Describe 'Get-GitInstruction' {
     }
 }
 
-Describe 'Get-AgentPaths' {
+Describe 'Get-AgentPath' {
     BeforeAll {
         . $script:CommonPath
     }
@@ -76,7 +75,7 @@ Describe 'Get-AgentPaths' {
         # Create the spec directory so Split-Path works
         New-Item -ItemType Directory -Path (Split-Path $specFile -Parent) -Force | Out-Null
 
-        $result = Get-AgentPaths -SpecFile $specFile -RunDir $runDir
+        $result = Get-AgentPath -SpecFile $specFile -RunDir $runDir
 
         $result.SpecBaseName | Should -Be '01-my-feature'
         $result.SpecsDir | Should -Be (Join-Path $TestDrive 'specs')
@@ -91,7 +90,7 @@ Describe 'Get-AgentPaths' {
 
         New-Item -ItemType Directory -Path (Split-Path $specFile -Parent) -Force | Out-Null
 
-        $result = Get-AgentPaths -SpecFile $specFile -RunDir $runDir
+        $result = Get-AgentPath -SpecFile $specFile -RunDir $runDir
 
         $result.SpecBaseName | Should -Be '03-multi-word-feature-name'
         $result.PlanFile | Should -Be (Join-Path $runDir 'plan-03-multi-word-feature-name.md')

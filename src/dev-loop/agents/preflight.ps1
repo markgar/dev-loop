@@ -22,27 +22,27 @@ param(
 
 Invoke-AgentBlock -AgentName 'preflight' -ProjectDir $ProjectDir -LogFile $LogFile -Action {
 
-    Log "========== PRE-FLIGHT CHECK ==========" Blue
+    Log -LogFile $LogFile "========== PRE-FLIGHT CHECK =========="  Blue
 
     # ── 1. Discover specs ─────────────────────────────────────────────
-    Log "--- Spec Discovery ---" Blue
-    Log "Specs directory : $SpecsDir" DarkGray
+    Log -LogFile $LogFile "--- Spec Discovery ---" Blue
+    Log -LogFile $LogFile "Specs directory : $SpecsDir" DarkGray
 
     $specFiles = @(Get-ChildItem -Path $SpecsDir -Filter '*.md' |
-        Where-Object { $_.Name -match '^\d{2}-' } |
-        Sort-Object Name)
+            Where-Object { $_.Name -match '^\d{2}-' } |
+            Sort-Object Name)
 
     if ($specFiles.Count -eq 0) {
-        Log "No numbered spec files (NN-*.md) found in $SpecsDir — nothing to do." Yellow
-        Log "Are you using spec-kit style specs? See https://github.com/github/spec-kit" Yellow
+        Log -LogFile $LogFile "No numbered spec files (NN-*.md) found in $SpecsDir — nothing to do." Yellow
+        Log -LogFile $LogFile "Are you using spec-kit style specs? See https://github.com/github/spec-kit" Yellow
         throw "No numbered spec files found in $SpecsDir"
     }
 
-    Log "Found $($specFiles.Count) spec(s):" DarkGray
+    Log -LogFile $LogFile "Found $($specFiles.Count) spec(s):" DarkGray
 
     $specs = @()
     foreach ($sf in $specFiles) {
-        Log "  - $($sf.Name)" DarkGray
+        Log -LogFile $LogFile "  - $($sf.Name)" DarkGray
         $specs += @{
             name = $sf.BaseName
             file = $sf.FullName
@@ -51,16 +51,16 @@ Invoke-AgentBlock -AgentName 'preflight' -ProjectDir $ProjectDir -LogFile $LogFi
 
     $discoveryFile = Join-Path $RunDir 'spec-discovery.json'
     $specs | ConvertTo-Json -Depth 2 | Set-Content -Path $discoveryFile -Encoding UTF8
-    Log "Discovery written to: $discoveryFile" Green
+    Log -LogFile $LogFile "Discovery written to: $discoveryFile" Green
 
     # ── 2. Constitution check ────────────────────────────────────────
-    Log "--- Constitution Check ---" Blue
+    Log -LogFile $LogFile "--- Constitution Check ---" Blue
 
     $constitutionPath = Join-Path $SpecsDir 'CONSTITUTION.md'
     if (-not (Test-Path $constitutionPath)) {
-        Log "No CONSTITUTION.md found at $constitutionPath — skipping constitution check." Yellow
-        Log "Are you using spec-kit style specs? See https://github.com/github/spec-kit" Yellow
-        Log "Pre-flight complete (no constitution)." Green
+        Log -LogFile $LogFile "No CONSTITUTION.md found at $constitutionPath — skipping constitution check." Yellow
+        Log -LogFile $LogFile "Are you using spec-kit style specs? See https://github.com/github/spec-kit" Yellow
+        Log -LogFile $LogFile "Pre-flight complete (no constitution)." Green
         return
     }
 
@@ -98,11 +98,11 @@ OUTPUT RULES:
 "@
 
     if (Test-Path $findingsFile) {
-        Log "Pre-flight findings saved to: $findingsFile" Yellow
-        Log "Review the findings and update CONSTITUTION.md before running the dev-loop." Yellow
+        Log -LogFile $LogFile "Pre-flight findings saved to: $findingsFile" Yellow
+        Log -LogFile $LogFile "Review the findings and update CONSTITUTION.md before running the dev-loop." Yellow
         throw "Pre-flight findings require review: $findingsFile"
     }
 
-    Log "Pre-flight complete." Green
+    Log -LogFile $LogFile "Pre-flight complete." Green
     return
 }

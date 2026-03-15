@@ -152,7 +152,7 @@ Describe 'build.ps1' {
         New-Item -ItemType Directory -Path $runDir -Force | Out-Null
         $logFile = Join-Path $runDir 'build.log'
 
-        # build.ps1 reads PlanFile from Get-AgentPaths, but doesn't check existence itself
+        # build.ps1 reads PlanFile from Get-AgentPath, but doesn't check existence itself
         '- [ ] **Task 1** — build something' | Set-Content (Join-Path $runDir 'plan-01-feature.md')
 
         $mockBin = New-MockCopilot -BasePath (Join-Path $TestDrive 'build-mock') -Script @'

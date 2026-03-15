@@ -117,7 +117,7 @@ Describe 'Manifest checkpoint and resume' {
     }
 }
 
-Describe 'Get-AgentPaths edge cases' {
+Describe 'Get-AgentPath edge cases' {
     BeforeAll {
         . $script:CommonPath
     }
@@ -127,7 +127,7 @@ Describe 'Get-AgentPaths edge cases' {
         $runDir = Join-Path $TestDrive 'run'
         New-Item -ItemType Directory -Path (Split-Path $specFile -Parent) -Force | Out-Null
 
-        $result = Get-AgentPaths -SpecFile $specFile -RunDir $runDir
+        $result = Get-AgentPath -SpecFile $specFile -RunDir $runDir
         $result.SpecBaseName | Should -Be '1-simple'
     }
 
@@ -136,7 +136,7 @@ Describe 'Get-AgentPaths edge cases' {
         $runDir = Join-Path $TestDrive 'project' '.dev-loop' '20260315-120000'
         New-Item -ItemType Directory -Path (Split-Path $specFile -Parent) -Force | Out-Null
 
-        $result = Get-AgentPaths -SpecFile $specFile -RunDir $runDir
+        $result = Get-AgentPath -SpecFile $specFile -RunDir $runDir
         $result.DevLoopRoot | Should -Be (Join-Path $TestDrive 'project' '.dev-loop')
     }
 }

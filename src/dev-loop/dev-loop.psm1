@@ -98,7 +98,7 @@ function Invoke-DevLoop {
 
         # ── Logging setup ─────────────────────────────────────────────────
         $LogFile = Join-Path $runDir 'dev-loop.log'
-        Log "Logging to: $LogFile" DarkGray
+        Log -LogFile $LogFile "Logging to: $LogFile" DarkGray
 
         # ── Manifest helpers ──────────────────────────────────────────────
         $manifestFile = Join-Path $runDir 'manifest.json'
@@ -116,7 +116,7 @@ function Invoke-DevLoop {
             $spec = $m.specs | Where-Object { $_.name -eq $specName }
             $spec.phases.$phaseName.started = (Get-Date -Format 'o')
             Save-Manifest $m
-            Log "  Started $phaseName for $specName" DarkYellow
+            Log -LogFile $LogFile "  Started $phaseName for $specName" DarkYellow
         }
 
         function Complete-Phase($specName, $phaseName) {
@@ -124,12 +124,12 @@ function Invoke-DevLoop {
             $spec = $m.specs | Where-Object { $_.name -eq $specName }
             $spec.phases.$phaseName.completed = (Get-Date -Format 'o')
             Save-Manifest $m
-            Log "  Completed $phaseName for $specName" Green
+            Log -LogFile $LogFile "  Completed $phaseName for $specName" Green
         }
 
         # ── Pre-flight (discovers specs, constitution check) ────────────
         $preflightLog = Join-Path $runDir 'preflight.log'
-        Log "Preflight log: $preflightLog" DarkGray
+        Log -LogFile $LogFile "Preflight log: $preflightLog" DarkGray
         $modelArgs = @{}
         if ($Model) { $modelArgs['Model'] = $Model }
 
@@ -152,44 +152,44 @@ function Invoke-DevLoop {
                 $phases[$p] = [ordered]@{ started = $null; completed = $null }
             }
             $specs += @{
-                name   = $d.name
-                file   = $d.file
+                name = $d.name
+                file = $d.file
                 phases = $phases
             }
         }
 
         $manifest = @{
-            runId    = (Split-Path $runDir -Leaf)
+            runId = (Split-Path $runDir -Leaf)
             specsDir = $SpecsDir
-            phases   = $phaseNames
-            specs    = $specs
+            phases = $phaseNames
+            specs = $specs
         }
 
         Save-Manifest $manifest
-        Log "Manifest written to: $manifestFile" Green
+        Log -LogFile $LogFile "Manifest written to: $manifestFile" Green
 
         # ── Manifest-driven spec loop ─────────────────────────────────────
         $manifest = Read-Manifest
         $phaseOrder = @('plan', 'plan-eval', 'build', 'review')
 
-        Log "========== STARTING SPEC LOOP ($($manifest.specs.Count) spec(s)) ==========" Cyan
+        Log -LogFile $LogFile "========== STARTING SPEC LOOP ($($manifest.specs.Count) spec(s)) =========="  Cyan
 
         foreach ($spec in $manifest.specs) {
             $specName = $spec.name
             $specFile = $spec.file
 
-            Log "────────── SPEC: $specName ──────────" Cyan
+            Log -LogFile $LogFile "────────── SPEC: $specName ──────────" Cyan
             $specLogFile = Join-Path $runDir "$specName.log"
-            Log "Spec log: $specLogFile" DarkGray
+            Log -LogFile $LogFile "Spec log: $specLogFile" DarkGray
 
             foreach ($phase in $phaseOrder) {
                 # Skip phases that are already completed
                 if ($spec.phases.$phase.completed) {
-                    Log "  [$phase] already completed at $($spec.phases.$phase.completed) — skipping" DarkGreen
+                    Log -LogFile $LogFile "  [$phase] already completed at $($spec.phases.$phase.completed) — skipping" DarkGreen
                     continue
                 }
 
-                Log "  [$phase] starting..." Yellow
+                Log -LogFile $LogFile "  [$phase] starting..." Yellow
 
                 switch ($phase) {
                     'plan' {
@@ -212,14 +212,14 @@ function Invoke-DevLoop {
                         while ($true) {
                             $planContent = Get-Content $planFile -Raw
                             if ($planContent -notmatch '- \[ \]') {
-                                Log "  All plan tasks complete for $specName" Green
+                                Log -LogFile $LogFile "  All plan tasks complete for $specName" Green
                                 break
                             }
                             $buildIteration++
                             if ($buildIteration -gt $maxBuildIterations) {
                                 throw "BUILD exceeded $maxBuildIterations iterations for $specName — possible infinite loop"
                             }
-                            Log "  [build] iteration $buildIteration — unchecked tasks remain" Yellow
+                            Log -LogFile $LogFile "  [build] iteration $buildIteration — unchecked tasks remain" Yellow
                             & "$script:ModuleRoot\agents\build.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile -GitPush:$GitPush @modelArgs
                             if ($LASTEXITCODE -ne 0) { throw "BUILD FAILED for $specName (iteration $buildIteration)" }
                         }
@@ -234,16 +234,17 @@ function Invoke-DevLoop {
                 }
             }
 
-            Log "  All phases complete for $specName" Green
+            Log -LogFile $LogFile "  All phases complete for $specName" Green
         }
 
-        Log "========== ALL SPECS COMPLETE ==========" Magenta
+        Log -LogFile $LogFile "========== ALL SPECS COMPLETE =========="  Magenta
     }
     catch {
         $errMsg = "FATAL [dev-loop]: $_"
         if ($LogFile) {
-            Log $errMsg Red
-        } else {
+            Log -LogFile $LogFile $errMsg Red
+        }
+        else {
             Write-Host $errMsg -ForegroundColor Red
         }
         throw

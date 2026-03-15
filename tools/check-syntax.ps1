@@ -1,6 +1,6 @@
 # check-syntax.ps1 — Parse-check all PowerShell source files in the repo
 $repoRoot = Split-Path $PSScriptRoot -Parent
-$files = @(Get-ChildItem -Path (Join-Path $repoRoot 'src') -Recurse -Include '*.ps1','*.psm1')
+$files = @(Get-ChildItem -Path (Join-Path $repoRoot 'src') -Recurse -Include '*.ps1', '*.psm1')
 # Include the launcher script at repo root
 $launcher = Join-Path $repoRoot 'dev-loop.ps1'
 if (Test-Path $launcher) { $files += Get-Item $launcher }
@@ -15,7 +15,8 @@ foreach ($f in $files) {
         $hasErrors = $true
         Write-Host "ERRORS in $relativePath" -ForegroundColor Red
         foreach ($e in $errors) { Write-Host "  $e" -ForegroundColor Red }
-    } else {
+    }
+    else {
         Write-Host "OK: $relativePath" -ForegroundColor Green
     }
 }

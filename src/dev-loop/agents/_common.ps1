@@ -1,6 +1,5 @@
 # _common.ps1 — Shared utilities for dev-loop agent scripts
 # Dot-source this file at the top of each agent: . "$PSScriptRoot\_common.ps1"
-# Expects $LogFile to already be defined in the calling scope for Log to work.
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -8,7 +7,11 @@ $ErrorActionPreference = 'Stop'
 $OutputEncoding = [System.Text.Encoding]::UTF8
 
 function Log {
-    param([string]$Message, [string]$Color = 'White')
+    param(
+        [Parameter(Mandatory)][string]$LogFile,
+        [string]$Message,
+        [string]$Color = 'White'
+    )
     Write-Host $Message -ForegroundColor $Color
     "$(Get-Date -Format 'HH:mm:ss') $Message" | Out-File -FilePath $LogFile -Append
 }
@@ -26,7 +29,8 @@ function Invoke-Copilot {
             $line = "[STDERR] $_"
             Write-Host $line -ForegroundColor Yellow
             $line | Out-File -FilePath $LogFile -Append
-        } else {
+        }
+        else {
             Write-Host $_
             $_ | Out-File -FilePath $LogFile -Append
         }
@@ -39,10 +43,10 @@ function Invoke-Copilot {
 function Get-GitInstruction {
     param([switch]$Push)
     if ($Push) { 'then git commit your work and push to the remote' }
-    else       { 'then git commit your work' }
+    else { 'then git commit your work' }
 }
 
-function Get-AgentPaths {
+function Get-AgentPath {
     param(
         [Parameter(Mandatory)][string]$SpecFile,
         [Parameter(Mandatory)][string]$RunDir
@@ -50,11 +54,11 @@ function Get-AgentPaths {
     $baseName = [System.IO.Path]::GetFileNameWithoutExtension($SpecFile)
     $specsDir = Split-Path $SpecFile -Parent
     @{
-        SpecBaseName     = $baseName
-        SpecsDir         = $specsDir
+        SpecBaseName = $baseName
+        SpecsDir = $specsDir
         ConstitutionPath = Join-Path $specsDir 'CONSTITUTION.md'
-        PlanFile         = Join-Path $RunDir "plan-$baseName.md"
-        DevLoopRoot      = Split-Path $RunDir -Parent
+        PlanFile = Join-Path $RunDir "plan-$baseName.md"
+        DevLoopRoot = Split-Path $RunDir -Parent
     }
 }
 
@@ -81,7 +85,7 @@ function Invoke-AgentBlock {
         . $Action
     }
     catch {
-        Write-AgentError $AgentName $_ $LogFile
+        Write-AgentError -AgentName $AgentName -ErrorRecord $_ -LogFile $LogFile
         throw
     }
     finally {

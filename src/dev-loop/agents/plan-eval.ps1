@@ -20,13 +20,13 @@ param(
 . "$PSScriptRoot\_common.ps1"
 
 Invoke-AgentBlock -AgentName 'plan-eval' -ProjectDir $ProjectDir -LogFile $LogFile -Action {
-    $paths = Get-AgentPaths -SpecFile $SpecFile -RunDir $RunDir
+    $paths = Get-AgentPath -SpecFile $SpecFile -RunDir $RunDir
     $planFile = $paths.PlanFile
 
-    Log "========== PLAN REVIEW: $($paths.SpecBaseName) ==========" Blue
+    Log -LogFile $LogFile "========== PLAN REVIEW: $($paths.SpecBaseName) =========="  Blue
 
     if (-not (Test-Path $planFile)) {
-        Log "Plan file not found: $planFile" Red
+        Log -LogFile $LogFile "Plan file not found: $planFile" Red
         throw "Plan file not found: $planFile"
     }
 
@@ -55,5 +55,5 @@ ACTION:
 - Do NOT create any new files. The plan file is the only output.
 "@
 
-    Log "Plan review complete: $planFile" DarkGray
+    Log -LogFile $LogFile "Plan review complete: $planFile" DarkGray
 }

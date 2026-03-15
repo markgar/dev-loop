@@ -20,12 +20,12 @@ param(
 . "$PSScriptRoot\_common.ps1"
 
 Invoke-AgentBlock -AgentName 'plan' -ProjectDir $ProjectDir -LogFile $LogFile -Action {
-    $paths = Get-AgentPaths -SpecFile $SpecFile -RunDir $RunDir
+    $paths = Get-AgentPath -SpecFile $SpecFile -RunDir $RunDir
     $constitutionPath = $paths.ConstitutionPath
-    $planOutputFile   = $paths.PlanFile
+    $planOutputFile = $paths.PlanFile
 
-    Log "========== INITIAL PLAN: $($paths.SpecBaseName) ==========" Blue
-    Log "Spec file : $SpecFile" DarkGray
+    Log -LogFile $LogFile "========== INITIAL PLAN: $($paths.SpecBaseName) =========="  Blue
+    Log -LogFile $LogFile "Spec file : $SpecFile" DarkGray
 
     Invoke-Copilot -LogFile $LogFile -Model $Model -Prompt @"
 You are a planning agent. Turn the input spec into a short, scannable checklist of tasks. Each task = one git commit.
@@ -53,11 +53,12 @@ Also print the plan to stdout.
 "@
 
     if (Test-Path $planOutputFile) {
-        Log "Plan output saved to: $planOutputFile" DarkGray
-        Log "---------- Initial Plan Contents (DEBUG) ----------" Cyan
-        Get-Content $planOutputFile | ForEach-Object { Log $_ }
-        Log "---------- End Initial Plan (DEBUG) ----------" Cyan
-    } else {
-        Log "Warning: copilot did not write plan output file at $planOutputFile" Yellow
+        Log -LogFile $LogFile "Plan output saved to: $planOutputFile" DarkGray
+        Log -LogFile $LogFile "---------- Initial Plan Contents (DEBUG) ----------" Cyan
+        Get-Content $planOutputFile | ForEach-Object { Log -LogFile $LogFile $_ }
+        Log -LogFile $LogFile "---------- End Initial Plan (DEBUG) ----------" Cyan
+    }
+    else {
+        Log -LogFile $LogFile "Warning: copilot did not write plan output file at $planOutputFile" Yellow
     }
 }
