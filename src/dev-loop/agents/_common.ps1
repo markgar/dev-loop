@@ -6,6 +6,24 @@ $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
 
+function Assert-GhAuth {
+    if (-not (Get-Command 'gh' -ErrorAction SilentlyContinue)) {
+        throw "GitHub CLI ('gh') not found on PATH. Install it first: https://cli.github.com"
+    }
+    gh auth status 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Not logged in to GitHub CLI. Run 'gh auth login' first."
+    }
+    if (-not (Get-Command 'copilot' -ErrorAction SilentlyContinue)) {
+        throw "GitHub Copilot CLI ('copilot') not found on PATH. Install it first: https://docs.github.com/en/copilot"
+    }
+    # Verify copilot is actually functional (not just a VS Code shim)
+    $verOut = & copilot --version 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "Copilot CLI is on PATH but not functional. Output: $verOut`nRun 'copilot --help' to trigger auto-install, or visit https://docs.github.com/en/copilot"
+    }
+}
+
 function Log {
     param(
         [Parameter(Mandatory)][string]$LogFile,

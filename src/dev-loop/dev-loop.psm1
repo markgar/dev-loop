@@ -44,9 +44,7 @@ function Invoke-DevLoop {
 
     . "$script:ModuleRoot\agents\_common.ps1"
 
-    if (-not (Get-Command 'copilot' -ErrorAction SilentlyContinue)) {
-        throw "GitHub Copilot CLI ('copilot') not found on PATH. Install it first: https://docs.github.com/en/copilot"
-    }
+    Assert-GhAuth
 
     $SpecsDir = (Resolve-Path $SpecsDir).Path
     $ProjectDir = (Resolve-Path $ProjectDir).Path
