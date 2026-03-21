@@ -24,12 +24,17 @@ function Invoke-DevLoop {
     .PARAMETER BuildAgent
         Optional custom agent name to pass to the build phase (e.g. 'my-custom-agent').
         When specified, the build agent runs with --agent <name>.
+    .PARAMETER Resume
+        Name of a previous run directory (e.g. '20260321-143022') under .dev-loop/ to resume.
+        Skips preflight and reuses the existing manifest, picking up from the first incomplete phase.
     .EXAMPLE
         Invoke-DevLoop -SpecsDir ./specs -ProjectDir ~/my-project -GitPush
     .EXAMPLE
         Invoke-DevLoop -SpecsDir ./specs -ProjectDir ~/my-project -Model claude-sonnet-4
     .EXAMPLE
         Invoke-DevLoop -SpecsDir ./specs -ProjectDir ~/my-project -BuildAgent my-custom-agent
+    .EXAMPLE
+        Invoke-DevLoop -SpecsDir ./specs -ProjectDir ~/my-project -Resume 20260321-143022
     #>
     [CmdletBinding()]
     [OutputType([void])]
@@ -46,7 +51,9 @@ function Invoke-DevLoop {
 
         [string]$Model,
 
-        [string]$BuildAgent
+        [string]$BuildAgent,
+
+        [string]$Resume
     )
 
     . "$script:ModuleRoot\agents\_common.ps1"
@@ -95,11 +102,24 @@ function Invoke-DevLoop {
             Write-Host "Added .dev-loop/ to .gitignore" -ForegroundColor DarkGray
         }
 
-        # Derive a timestamp for this run and create the run directory
-        $RunTimestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-        $runDir = Join-Path $trackingRoot $RunTimestamp
-        New-Item -ItemType Directory -Path $runDir | Out-Null
-        Write-Host "Run directory: $runDir" -ForegroundColor DarkGray
+        # ── Run directory: resume existing or create new ────────────────
+        if ($Resume) {
+            $runDir = Join-Path $trackingRoot $Resume
+            if (-not (Test-Path $runDir)) {
+                throw "Resume directory '$runDir' does not exist. Check the name and try again."
+            }
+            $manifestFile = Join-Path $runDir 'manifest.json'
+            if (-not (Test-Path $manifestFile)) {
+                throw "Resume directory '$runDir' has no manifest.json — cannot resume."
+            }
+            Write-Host "Resuming run: $runDir" -ForegroundColor Yellow
+        }
+        else {
+            $RunTimestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+            $runDir = Join-Path $trackingRoot $RunTimestamp
+            New-Item -ItemType Directory -Path $runDir | Out-Null
+            Write-Host "Run directory: $runDir" -ForegroundColor DarkGray
+        }
 
         # ── Logging setup ─────────────────────────────────────────────────
         $LogFile = Join-Path $runDir 'dev-loop.log'
@@ -132,46 +152,52 @@ function Invoke-DevLoop {
             Log -LogFile $LogFile "  Completed $phaseName for $specName" Green
         }
 
-        # ── Pre-flight (discovers specs, constitution check) ────────────
-        $preflightLog = Join-Path $runDir 'preflight.log'
-        Log -LogFile $LogFile "Preflight log: $preflightLog" DarkGray
+        # ── Pre-flight & manifest ─────────────────────────────────────
         $modelArgs = @{}
         if ($Model) { $modelArgs['Model'] = $Model }
 
-        & "$script:ModuleRoot\agents\preflight.ps1" -SpecsDir $SpecsDir -ProjectDir $ProjectDir -RunDir $runDir -LogFile $preflightLog @modelArgs
-        if ($LASTEXITCODE -ne 0) { throw "Preflight failed." }
-
-        # ── Build manifest from preflight discovery ───────────────────────
-        $discoveryFile = Join-Path $runDir 'spec-discovery.json'
-        if (-not (Test-Path $discoveryFile)) {
-            throw "No spec-discovery.json found after preflight — cannot continue."
+        if ($Resume) {
+            Log -LogFile $LogFile "Resuming — skipping preflight, reusing existing manifest" Yellow
         }
+        else {
+            $preflightLog = Join-Path $runDir 'preflight.log'
+            Log -LogFile $LogFile "Preflight log: $preflightLog" DarkGray
 
-        $discovered = Get-Content $discoveryFile -Raw | ConvertFrom-Json
-        $phaseNames = @('plan', 'plan-eval', 'build', 'review')
+            & "$script:ModuleRoot\agents\preflight.ps1" -SpecsDir $SpecsDir -ProjectDir $ProjectDir -RunDir $runDir -LogFile $preflightLog @modelArgs
+            if ($LASTEXITCODE -ne 0) { throw "Preflight failed." }
 
-        $specs = @()
-        foreach ($d in $discovered) {
-            $phases = [ordered]@{}
-            foreach ($p in $phaseNames) {
-                $phases[$p] = [ordered]@{ started = $null; completed = $null }
+            # ── Build manifest from preflight discovery ───────────────────────
+            $discoveryFile = Join-Path $runDir 'spec-discovery.json'
+            if (-not (Test-Path $discoveryFile)) {
+                throw "No spec-discovery.json found after preflight — cannot continue."
             }
-            $specs += @{
-                name = $d.name
-                file = $d.file
-                phases = $phases
+
+            $discovered = Get-Content $discoveryFile -Raw | ConvertFrom-Json
+            $phaseNames = @('plan', 'plan-eval', 'build', 'review')
+
+            $specs = @()
+            foreach ($d in $discovered) {
+                $phases = [ordered]@{}
+                foreach ($p in $phaseNames) {
+                    $phases[$p] = [ordered]@{ started = $null; completed = $null }
+                }
+                $specs += @{
+                    name = $d.name
+                    file = $d.file
+                    phases = $phases
+                }
             }
-        }
 
-        $manifest = @{
-            runId = (Split-Path $runDir -Leaf)
-            specsDir = $SpecsDir
-            phases = $phaseNames
-            specs = $specs
-        }
+            $manifest = @{
+                runId = (Split-Path $runDir -Leaf)
+                specsDir = $SpecsDir
+                phases = $phaseNames
+                specs = $specs
+            }
 
-        Save-Manifest $manifest
-        Log -LogFile $LogFile "Manifest written to: $manifestFile" Green
+            Save-Manifest $manifest
+            Log -LogFile $LogFile "Manifest written to: $manifestFile" Green
+        }
 
         # ── Manifest-driven spec loop ─────────────────────────────────────
         $manifest = Read-Manifest
