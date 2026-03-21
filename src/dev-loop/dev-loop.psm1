@@ -21,10 +21,15 @@ function Invoke-DevLoop {
     .PARAMETER Model
         AI model to use (e.g. claude-sonnet-4, gpt-5.1). If omitted, Copilot CLI uses its default.
         Run 'copilot --help' to see available models.
+    .PARAMETER BuildAgent
+        Optional custom agent name to pass to the build phase (e.g. 'my-custom-agent').
+        When specified, the build agent runs with --agent <name>.
     .EXAMPLE
         Invoke-DevLoop -SpecsDir ./specs -ProjectDir ~/my-project -GitPush
     .EXAMPLE
         Invoke-DevLoop -SpecsDir ./specs -ProjectDir ~/my-project -Model claude-sonnet-4
+    .EXAMPLE
+        Invoke-DevLoop -SpecsDir ./specs -ProjectDir ~/my-project -BuildAgent my-custom-agent
     #>
     [CmdletBinding()]
     [OutputType([void])]
@@ -39,7 +44,9 @@ function Invoke-DevLoop {
 
         [switch]$GitPush,
 
-        [string]$Model
+        [string]$Model,
+
+        [string]$BuildAgent
     )
 
     . "$script:ModuleRoot\agents\_common.ps1"
@@ -218,7 +225,10 @@ function Invoke-DevLoop {
                                 throw "BUILD exceeded $maxBuildIterations iterations for $specName — possible infinite loop"
                             }
                             Log -LogFile $LogFile "  [build] iteration $buildIteration — unchecked tasks remain" Yellow
-                            & "$script:ModuleRoot\agents\build.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile -GitPush:$GitPush @modelArgs
+                            $buildArgs = @{}
+                            if ($Model) { $buildArgs['Model'] = $Model }
+                            if ($BuildAgent) { $buildArgs['Agent'] = $BuildAgent }
+                            & "$script:ModuleRoot\agents\build.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile -GitPush:$GitPush @buildArgs
                             if ($LASTEXITCODE -ne 0) { throw "BUILD FAILED for $specName (iteration $buildIteration)" }
                         }
                         Complete-Phase $specName 'build'

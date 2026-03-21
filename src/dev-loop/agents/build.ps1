@@ -16,7 +16,9 @@ param(
 
     [switch]$GitPush,
 
-    [string]$Model
+    [string]$Model,
+
+    [string]$Agent
 )
 
 . "$PSScriptRoot\_common.ps1"
@@ -31,7 +33,7 @@ Invoke-AgentBlock -AgentName 'build' -ProjectDir $ProjectDir -LogFile $LogFile -
     Log -LogFile $LogFile "========== BUILD PHASE =========="  Cyan
     Log -LogFile $LogFile "Building spec : $SpecFile" DarkGray
     Log -LogFile $LogFile "Using plan    : $PlanFile" DarkGray
-    Invoke-Copilot -LogFile $LogFile -Model $Model -Prompt @"
+    Invoke-Copilot -LogFile $LogFile -Model $Model -Agent $Agent -Prompt @"
 You are a builder agent. Your job is to implement one spec at a time, using a plan that was already built for you.
 
 Before building, read the project constitution at $constitutionPath — its Project Principles are inviolable constraints. Every change you make must conform to them.

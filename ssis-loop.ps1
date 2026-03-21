@@ -8,7 +8,9 @@ param(
     [Parameter(Mandatory)]
     [string]$ProjectDir,
 
-    [string]$Model
+    [string]$Model,
+
+    [string]$BuildAgent
 )
 
 Set-StrictMode -Version Latest
@@ -57,6 +59,7 @@ Log -LogFile $logFile "Project: $ProjectDir" DarkGray
 # ── Run cycle-analysis agent ─────────────────────────────────────
 $modelArgs = @{}
 if ($Model) { $modelArgs['Model'] = $Model }
+if ($BuildAgent) { $modelArgs['BuildAgent'] = $BuildAgent }
 
 try {
     & "$PSScriptRoot/src/dev-loop/ssis-agents/cycle-analysis.ps1" `
