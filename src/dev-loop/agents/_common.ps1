@@ -38,10 +38,12 @@ function Invoke-Copilot {
     param(
         [Parameter(Mandatory)][string]$Prompt,
         [string]$Model,
+        [string]$Agent,
         [Parameter(Mandatory)][string]$LogFile
     )
     $copilotArgs = @('-p', $Prompt, '--yolo')
     if ($Model) { $copilotArgs += '--model'; $copilotArgs += $Model }
+    if ($Agent) { $copilotArgs += '--agent'; $copilotArgs += $Agent }
     & copilot @copilotArgs 2>&1 | ForEach-Object {
         if ($_ -is [System.Management.Automation.ErrorRecord]) {
             $line = "[STDERR] $_"

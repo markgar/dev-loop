@@ -15,7 +15,9 @@ param(
     [Parameter(Mandatory)]
     [string]$LogFile,
 
-    [string]$Model
+    [string]$Model,
+
+    [string]$BuildAgent
 )
 
 . "$PSScriptRoot\..\agents\_common.ps1"
@@ -31,7 +33,7 @@ Invoke-AgentBlock -AgentName 'cycle-analysis' -ProjectDir $ProjectDir -LogFile $
 
     $analysisFile = Join-Path $RunDir 'cycle-analysis.md'
 
-    Invoke-Copilot -LogFile $LogFile -Model $Model -Prompt @"
+    Invoke-Copilot -LogFile $LogFile -Model $Model -Agent $BuildAgent -Prompt @"
 You are an SSIS migration analyst. Your job is to examine a DTSX package and determine how it loads data — its cycle strategy.
 
 Open and read the DTSX package at: $DtsxPath
