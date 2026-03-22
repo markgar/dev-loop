@@ -21,9 +21,18 @@ function Invoke-DevLoop {
     .PARAMETER Model
         AI model to use (e.g. claude-sonnet-4, gpt-5.1). If omitted, Copilot CLI uses its default.
         Run 'copilot --help' to see available models.
+    .PARAMETER PlanAgent
+        Optional custom agent name to pass to the plan phase.
+        When specified, the plan agent runs with --agent <name>.
+    .PARAMETER PlanEvalAgent
+        Optional custom agent name to pass to the plan-eval phase.
+        When specified, the plan-eval agent runs with --agent <name>.
     .PARAMETER BuildAgent
         Optional custom agent name to pass to the build phase (e.g. 'my-custom-agent').
         When specified, the build agent runs with --agent <name>.
+    .PARAMETER ReviewAgent
+        Optional custom agent name to pass to the review phase.
+        When specified, the review agent runs with --agent <name>.
     .PARAMETER Resume
         Name of a previous run directory (e.g. '20260321-143022') under .dev-loop/ to resume.
         Skips preflight and reuses the existing manifest, picking up from the first incomplete phase.
@@ -51,7 +60,13 @@ function Invoke-DevLoop {
 
         [string]$Model,
 
+        [string]$PlanAgent,
+
+        [string]$PlanEvalAgent,
+
         [string]$BuildAgent,
+
+        [string]$ReviewAgent,
 
         [string]$Resume
     )
@@ -225,13 +240,19 @@ function Invoke-DevLoop {
                 switch ($phase) {
                     'plan' {
                         Start-Phase $specName 'plan'
-                        & "$script:ModuleRoot\agents\plan.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile @modelArgs
+                        $planArgs = @{}
+                        if ($Model) { $planArgs['Model'] = $Model }
+                        if ($PlanAgent) { $planArgs['Agent'] = $PlanAgent }
+                        & "$script:ModuleRoot\agents\plan.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile @planArgs
                         if ($LASTEXITCODE -ne 0) { throw "PLAN FAILED for $specName" }
                         Complete-Phase $specName 'plan'
                     }
                     'plan-eval' {
                         Start-Phase $specName 'plan-eval'
-                        & "$script:ModuleRoot\agents\plan-eval.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile @modelArgs
+                        $planEvalArgs = @{}
+                        if ($Model) { $planEvalArgs['Model'] = $Model }
+                        if ($PlanEvalAgent) { $planEvalArgs['Agent'] = $PlanEvalAgent }
+                        & "$script:ModuleRoot\agents\plan-eval.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile @planEvalArgs
                         if ($LASTEXITCODE -ne 0) { throw "PLAN-EVAL FAILED for $specName" }
                         Complete-Phase $specName 'plan-eval'
                     }
@@ -261,7 +282,10 @@ function Invoke-DevLoop {
                     }
                     'review' {
                         Start-Phase $specName 'review'
-                        & "$script:ModuleRoot\agents\review.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile -GitPush:$GitPush @modelArgs
+                        $reviewArgs = @{}
+                        if ($Model) { $reviewArgs['Model'] = $Model }
+                        if ($ReviewAgent) { $reviewArgs['Agent'] = $ReviewAgent }
+                        & "$script:ModuleRoot\agents\review.ps1" -SpecFile $specFile -ProjectDir $ProjectDir -RunDir $runDir -LogFile $specLogFile -GitPush:$GitPush @reviewArgs
                         if ($LASTEXITCODE -ne 0) { throw "REVIEW FAILED for $specName" }
                         Complete-Phase $specName 'review'
                     }

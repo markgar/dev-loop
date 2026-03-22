@@ -14,7 +14,9 @@ param(
     [Parameter(Mandatory)]
     [string]$LogFile,
 
-    [string]$Model
+    [string]$Model,
+
+    [string]$Agent
 )
 
 . "$PSScriptRoot\_common.ps1"
@@ -30,7 +32,7 @@ Invoke-AgentBlock -AgentName 'plan-eval' -ProjectDir $ProjectDir -LogFile $LogFi
         throw "Plan file not found: $planFile"
     }
 
-    Invoke-Copilot -LogFile $LogFile -Model $Model -Prompt @"
+    Invoke-Copilot -LogFile $LogFile -Model $Model -Agent $Agent -Prompt @"
 You are a plan-evaluation agent. Your job is to review a generated implementation plan against its spec and **fix the plan in-place**.
 
 The plan to review and update is at: $planFile

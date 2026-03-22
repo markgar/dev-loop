@@ -14,7 +14,9 @@ param(
     [Parameter(Mandatory)]
     [string]$LogFile,
 
-    [string]$Model
+    [string]$Model,
+
+    [string]$Agent
 )
 
 . "$PSScriptRoot\_common.ps1"
@@ -27,7 +29,7 @@ Invoke-AgentBlock -AgentName 'plan' -ProjectDir $ProjectDir -LogFile $LogFile -A
     Log -LogFile $LogFile "========== INITIAL PLAN: $($paths.SpecBaseName) =========="  Blue
     Log -LogFile $LogFile "Spec file : $SpecFile" DarkGray
 
-    Invoke-Copilot -LogFile $LogFile -Model $Model -Prompt @"
+    Invoke-Copilot -LogFile $LogFile -Model $Model -Agent $Agent -Prompt @"
 You are a planning agent. Turn the input spec into a short, scannable checklist of tasks. Each task = one git commit.
 
 Before planning, read the project constitution at $constitutionPath — its Project Principles are inviolable constraints. If a task would violate a principle, redesign the task.

@@ -12,7 +12,13 @@ param(
 
     [string]$Model,
 
+    [string]$PlanAgent,
+
+    [string]$PlanEvalAgent,
+
     [string]$BuildAgent,
+
+    [string]$ReviewAgent,
 
     [string]$Resume
 )
@@ -21,7 +27,10 @@ Import-Module "$PSScriptRoot/src/dev-loop/dev-loop.psd1" -Force
 
 $modelArgs = @{}
 if ($Model) { $modelArgs['Model'] = $Model }
+if ($PlanAgent) { $modelArgs['PlanAgent'] = $PlanAgent }
+if ($PlanEvalAgent) { $modelArgs['PlanEvalAgent'] = $PlanEvalAgent }
 if ($BuildAgent) { $modelArgs['BuildAgent'] = $BuildAgent }
+if ($ReviewAgent) { $modelArgs['ReviewAgent'] = $ReviewAgent }
 if ($Resume) { $modelArgs['Resume'] = $Resume }
 
 try {

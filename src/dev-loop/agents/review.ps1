@@ -16,7 +16,9 @@ param(
 
     [switch]$GitPush,
 
-    [string]$Model
+    [string]$Model,
+
+    [string]$Agent
 )
 
 . "$PSScriptRoot\_common.ps1"
@@ -29,7 +31,7 @@ Invoke-AgentBlock -AgentName 'review' -ProjectDir $ProjectDir -LogFile $LogFile 
 
     Log -LogFile $LogFile "========== REVIEW PHASE =========="  Yellow
     Log -LogFile $LogFile "Reviewing spec: $SpecFile" DarkGray
-    Invoke-Copilot -LogFile $LogFile -Model $Model -Prompt @"
+    Invoke-Copilot -LogFile $LogFile -Model $Model -Agent $Agent -Prompt @"
 Before reviewing, read the project constitution at $constitutionPath — its Project Principles are inviolable constraints. Flag any code that violates them.
 
 The spec being implemented is at: $SpecFile
