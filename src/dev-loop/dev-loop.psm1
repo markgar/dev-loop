@@ -68,7 +68,9 @@ function Invoke-DevLoop {
 
         [string]$ReviewAgent,
 
-        [string]$Resume
+        [string]$Resume,
+
+        [int]$PauseBetweenSpecs = 0
     )
 
     . "$script:ModuleRoot\agents\_common.ps1"
@@ -293,6 +295,11 @@ function Invoke-DevLoop {
             }
 
             Log -LogFile $LogFile "  All phases complete for $specName" Green
+
+            if ($PauseBetweenSpecs -gt 0) {
+                Log -LogFile $LogFile "  Pausing ${PauseBetweenSpecs}s before next spec (Ctrl+C to stop)..." DarkYellow
+                Start-Sleep -Seconds $PauseBetweenSpecs
+            }
         }
 
         Log -LogFile $LogFile "========== ALL SPECS COMPLETE =========="  Magenta

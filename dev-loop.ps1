@@ -20,7 +20,9 @@ param(
 
     [string]$ReviewAgent,
 
-    [string]$Resume
+    [string]$Resume,
+
+    [int]$PauseBetweenSpecs = 0
 )
 
 Import-Module "$PSScriptRoot/src/dev-loop/dev-loop.psd1" -Force
@@ -32,6 +34,7 @@ if ($PlanEvalAgent) { $modelArgs['PlanEvalAgent'] = $PlanEvalAgent }
 if ($BuildAgent) { $modelArgs['BuildAgent'] = $BuildAgent }
 if ($ReviewAgent) { $modelArgs['ReviewAgent'] = $ReviewAgent }
 if ($Resume) { $modelArgs['Resume'] = $Resume }
+if ($PauseBetweenSpecs -gt 0) { $modelArgs['PauseBetweenSpecs'] = $PauseBetweenSpecs }
 
 try {
     Invoke-DevLoop -SpecsDir $SpecsDir -ProjectDir $ProjectDir -GitPush:$GitPush @modelArgs
